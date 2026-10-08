@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { OrderStatusBadge } from './OrderStatusBadge'
+import { normalizeDemoOrder } from './orderState'
 import { orderStatusLabels, type DemoOrder, type OrderStatus } from './types'
 
 interface OrderDetailsProps {
@@ -57,7 +58,7 @@ function formatPrice(value: number) {
 export function OrderDetails({
   onClose,
   onStatusChange,
-  order,
+  order: rawOrder,
 }: OrderDetailsProps) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -66,6 +67,27 @@ export function OrderDetails({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
+
+  const order = normalizeDemoOrder(rawOrder)
+  if (!order || order.status === 'UNKNOWN') {
+    return (
+      <div className="order-details-backdrop" onMouseDown={onClose}>
+        <section
+          aria-labelledby="order-details-unavailable-title"
+          aria-modal="true"
+          className="order-details-dialog order-details-fallback"
+          onMouseDown={(event) => event.stopPropagation()}
+          role="dialog"
+        >
+          <h2 id="order-details-unavailable-title">Order details unavailable</h2>
+          <p>This order data could not be displayed safely.</p>
+          <button className="order-action-button order-action-progress" onClick={onClose} type="button">
+            Close
+          </button>
+        </section>
+      </div>
+    )
+  }
 
   const action = partnerAction(order.status)
   const simulatedAction = demoAction(order.status)

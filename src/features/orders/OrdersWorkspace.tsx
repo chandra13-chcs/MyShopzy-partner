@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { OrderDetails } from './OrderDetails'
 import { OrderList } from './OrderList'
 import { OrderStatusBadge } from './OrderStatusBadge'
+import { normalizeDemoOrders } from './orderState'
 import type { DemoOrder, OrderStatus } from './types'
 import './orders.css'
 
@@ -31,11 +32,12 @@ export default function OrdersWorkspace({
   const [filter, setFilter] = useState<OrderFilter>('ALL')
   const [search, setSearch] = useState('')
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
-  const newOrderCount = orders.filter((order) => order.status === 'PENDING').length
+  const safeOrders = useMemo(() => normalizeDemoOrders(orders), [orders])
+  const newOrderCount = safeOrders.filter((order) => order.status === 'PENDING').length
 
   const visibleOrders = useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
-    return orders.filter((order) => {
+    return safeOrders.filter((order) => {
       const matchesFilter = filter === 'ALL' || order.status === filter
       const matchesSearch =
         !query ||
@@ -43,7 +45,7 @@ export default function OrdersWorkspace({
         order.customerName.toLocaleLowerCase().includes(query)
       return matchesFilter && matchesSearch
     })
-  }, [filter, orders, search])
+  }, [filter, safeOrders, search])
 
   const activeOrders = visibleOrders.filter(
     (order) => !historyStatuses.includes(order.status),
@@ -55,7 +57,7 @@ export default function OrdersWorkspace({
     filter === 'ALL' || !historyStatuses.includes(filter as OrderStatus)
   const showHistory =
     filter === 'ALL' || historyStatuses.includes(filter as OrderStatus)
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId)
+  const selectedOrder = safeOrders.find((order) => order.id === selectedOrderId)
 
   return (
     <div className="orders-workspace">
@@ -100,8 +102,8 @@ export default function OrdersWorkspace({
           {filters.map((item) => {
             const count =
               item.value === 'ALL'
-                ? orders.length
-                : orders.filter((order) => order.status === item.value).length
+                ? safeOrders.length
+                : safeOrders.filter((order) => order.status === item.value).length
             return (
               <button
                 aria-selected={filter === item.value}

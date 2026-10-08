@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
 import OrdersWorkspace from '../features/orders/OrdersWorkspace'
 import { initialOrders } from '../features/orders/orderDemoData'
+import { normalizeDemoOrders, transitionDemoOrder } from '../features/orders/orderState'
 import type { OrderStatus } from '../features/orders/types'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
 import ReportsWorkspace from '../features/reports/ReportsWorkspace'
@@ -13,19 +14,6 @@ import DashboardPage from '../pages/DashboardPage'
 import LoginPage from '../pages/LoginPage'
 import { resolveRoute, type AppRoute } from './routes'
 
-const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ['ACCEPTED', 'REJECTED'],
-  ACCEPTED: ['PREPARING'],
-  PREPARING: ['READY'],
-  READY: ['FINDING_RIDER'],
-  FINDING_RIDER: ['RIDER_ASSIGNED'],
-  RIDER_ASSIGNED: ['PICKED_UP'],
-  PICKED_UP: ['ON_THE_WAY'],
-  ON_THE_WAY: ['DELIVERED'],
-  DELIVERED: [],
-  REJECTED: [],
-}
-
 function App() {
   const [route, setRoute] = useState<AppRoute>(() =>
     resolveRoute(window.location.pathname),
@@ -33,7 +21,8 @@ function App() {
   const [storeOpen, setStoreOpen] = useState(true)
   const [storeProfile, setStoreProfile] = useState(initialStoreProfile)
   const [operatingHours, setOperatingHours] = useState(initialOperatingHours)
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState(() => normalizeDemoOrders(initialOrders))
+  const safeOrders = normalizeDemoOrders(orders)
 
   useEffect(() => {
     function syncRoute() {
@@ -50,55 +39,16 @@ function App() {
   }
 
   function updateOrderStatus(orderId: string, status: OrderStatus) {
-    setOrders((current) =>
-      current.map((order) => {
-        if (
-          order.id !== orderId ||
-          !allowedOrderTransitions[order.status].includes(status)
-        ) {
-          return order
-        }
-        const timestamp = new Date().toLocaleTimeString('en-IN', {
+    const timestamp = new Date().toLocaleTimeString('en-IN', {
           hour: 'numeric',
           minute: '2-digit',
         })
-        const statusHistory = [
-          ...order.statusHistory,
-          { status, timestamp },
-          ...(order.status === 'PREPARING' && status === 'READY'
-            ? [{ status: 'FINDING_RIDER' as const, timestamp }]
-            : []),
-        ]
-        const nextStatus =
-          order.status === 'PREPARING' && status === 'READY'
-            ? 'FINDING_RIDER'
-            : status
-
-        return {
-          ...order,
-          status: nextStatus,
-          statusHistory,
-          ...(status === 'RIDER_ASSIGNED'
-            ? {
-                rider: {
-                  name: 'Ravi Kumar',
-                  id: 'RDR-1001',
-                  vehicle: 'Bike',
-                },
-              }
-            : {}),
-          ...(status === 'DELIVERED' ? { deliveredAt: timestamp } : {}),
-          ...(status === 'REJECTED'
-            ? {
-                rejectionReason: 'Partner unavailable to prepare this order.',
-                paymentStatus:
-                  order.paymentStatus === 'PAID'
-                    ? ('REFUNDED' as const)
-                    : order.paymentStatus,
-              }
-            : {}),
-        }
-      }),
+    setOrders((current) =>
+      normalizeDemoOrders(current).map((order) =>
+        order.id === orderId
+          ? transitionDemoOrder(order, status, timestamp) ?? order
+          : order,
+      ),
     )
   }
 
@@ -108,14 +58,14 @@ function App() {
       <DashboardPage
         businessType={storeProfile.businessType}
         businessName={storeProfile.businessName}
-        orders={orders}
+        orders={safeOrders}
         storeOpen={storeOpen}
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
       />
     )
   } else if (route.path === '/orders') {
     page = (
-      <OrdersWorkspace orders={orders} onStatusChange={updateOrderStatus} />
+      <OrdersWorkspace orders={safeOrders} onStatusChange={updateOrderStatus} />
     )
   } else if (route.path === '/products') {
     page = <ProductsWorkspace />
@@ -131,7 +81,7 @@ function App() {
       />
     )
   } else if (route.path === '/reports') {
-    page = <ReportsWorkspace orders={orders} />
+    page = <ReportsWorkspace orders={safeOrders} />
   } else if (route.path === '/settings') {
     page = (
       <SettingsWorkspace

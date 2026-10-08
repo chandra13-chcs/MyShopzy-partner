@@ -1,4 +1,5 @@
 import { OrderStatusBadge } from './OrderStatusBadge'
+import { normalizeDemoOrder } from './orderState'
 import type { DemoOrder } from './types'
 
 interface OrderCardProps {
@@ -21,8 +22,18 @@ function nextAction(status: DemoOrder['status']) {
 export function OrderCard({
   onOpen,
   onStatusChange,
-  order,
+  order: rawOrder,
 }: OrderCardProps) {
+  const order = normalizeDemoOrder(rawOrder)
+  if (!order || order.status === 'UNKNOWN') {
+    return (
+      <article className="order-card order-card-unavailable">
+        <strong>Order unavailable</strong>
+        <span>This order data could not be displayed safely.</span>
+      </article>
+    )
+  }
+
   const next = nextAction(order.status)
   const isNew = order.status === 'PENDING'
   const itemCount = order.items.reduce((count, item) => count + item.quantity, 0)

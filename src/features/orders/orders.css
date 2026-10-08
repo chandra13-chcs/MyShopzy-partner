@@ -273,6 +273,17 @@
   background: #fff;
 }
 
+.order-card-unavailable {
+  gap: 6px;
+  color: #657187;
+  font-size: 10px;
+}
+
+.order-card-unavailable strong {
+  color: #354157;
+  font-size: 11px;
+}
+
 .order-card.is-pending {
   border-color: #ead8b4;
   background: #fffdf8;
@@ -543,6 +554,11 @@
   color: #a33b3b;
 }
 
+.status-unknown {
+  background: #f0f2f5;
+  color: #586579;
+}
+
 .order-card-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -653,6 +669,18 @@
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 20px 60px rgb(15 25 48 / 20%);
+}
+
+.order-details-fallback {
+  gap: 12px;
+  padding: 20px;
+  color: #657187;
+  font-size: 12px;
+}
+
+.order-details-fallback h2,
+.order-details-fallback p {
+  margin: 0;
 }
 
 .order-details-header {

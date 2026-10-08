@@ -9,6 +9,7 @@ export type OrderStatus =
   | 'ON_THE_WAY'
   | 'DELIVERED'
   | 'REJECTED'
+  | 'UNKNOWN'
 
 export type PaymentMethod = 'UPI' | 'Cash on Delivery'
 export type PaymentStatus = 'PAID' | 'PAYMENT_DUE' | 'REFUNDED'
@@ -24,6 +25,7 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
   ON_THE_WAY: 'On The Way',
   DELIVERED: 'Delivered',
   REJECTED: 'Rejected',
+  UNKNOWN: 'Status unavailable',
 }
 
 export interface OrderItem {
