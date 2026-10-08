@@ -17,8 +17,12 @@ const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
   PENDING: ['ACCEPTED', 'REJECTED'],
   ACCEPTED: ['PREPARING'],
   PREPARING: ['READY'],
-  READY: ['COMPLETED'],
-  COMPLETED: [],
+  READY: ['FINDING_RIDER'],
+  FINDING_RIDER: ['RIDER_ASSIGNED'],
+  RIDER_ASSIGNED: ['PICKED_UP'],
+  PICKED_UP: ['ON_THE_WAY'],
+  ON_THE_WAY: ['DELIVERED'],
+  DELIVERED: [],
   REJECTED: [],
 }
 
@@ -54,7 +58,46 @@ function App() {
         ) {
           return order
         }
-        return { ...order, status }
+        const timestamp = new Date().toLocaleTimeString('en-IN', {
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+        const statusHistory = [
+          ...order.statusHistory,
+          { status, timestamp },
+          ...(order.status === 'PREPARING' && status === 'READY'
+            ? [{ status: 'FINDING_RIDER' as const, timestamp }]
+            : []),
+        ]
+        const nextStatus =
+          order.status === 'PREPARING' && status === 'READY'
+            ? 'FINDING_RIDER'
+            : status
+
+        return {
+          ...order,
+          status: nextStatus,
+          statusHistory,
+          ...(status === 'RIDER_ASSIGNED'
+            ? {
+                rider: {
+                  name: 'Ravi Kumar',
+                  id: 'RDR-1001',
+                  vehicle: 'Bike',
+                },
+              }
+            : {}),
+          ...(status === 'DELIVERED' ? { deliveredAt: timestamp } : {}),
+          ...(status === 'REJECTED'
+            ? {
+                rejectionReason: 'Partner unavailable to prepare this order.',
+                paymentStatus:
+                  order.paymentStatus === 'PAID'
+                    ? ('REFUNDED' as const)
+                    : order.paymentStatus,
+              }
+            : {}),
+        }
       }),
     )
   }

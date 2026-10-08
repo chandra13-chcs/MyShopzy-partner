@@ -1,5 +1,5 @@
 import type { BusinessType } from '../features/store/types'
-import type { DemoOrder } from '../features/orders/types'
+import { orderStatusLabels, type DemoOrder } from '../features/orders/types'
 
 interface DashboardPageProps {
   businessName: string
@@ -16,15 +16,20 @@ export default function DashboardPage({
   storeOpen,
   onToggleStore,
 }: DashboardPageProps) {
-  const pendingOrders = orders.filter((order) => order.status === 'PENDING').length
-  const completedSales = orders
-    .filter((order) => order.status === 'COMPLETED')
+  const countStatus = (status: DemoOrder['status']) =>
+    orders.filter((order) => order.status === status).length
+  const outForDelivery = orders.filter(
+    (order) => order.status === 'PICKED_UP' || order.status === 'ON_THE_WAY',
+  ).length
+  const deliveredSales = orders
+    .filter((order) => order.status === 'DELIVERED')
     .reduce((total, order) => total + order.total, 0)
   const metrics = [
-    { label: "Today's Orders", value: String(orders.length), note: 'Demo orders today' },
-    { label: 'Pending Orders', value: String(pendingOrders), note: 'Waiting for your action' },
-    { label: "Today's Sales", value: `₹${completedSales.toLocaleString('en-IN')}`, note: 'Completed demo orders' },
-    { label: 'Products', value: '0', note: 'Listed in your store' },
+    { label: 'New Orders', value: String(countStatus('PENDING')), note: 'Awaiting your response' },
+    { label: 'Preparing', value: String(countStatus('PREPARING')), note: 'In the kitchen' },
+    { label: 'Ready', value: String(countStatus('READY')), note: 'Waiting for a rider' },
+    { label: 'Out for Delivery', value: String(outForDelivery), note: 'With the delivery partner' },
+    { label: "Today's Completed", value: String(countStatus('DELIVERED')), note: `Sales ₹${deliveredSales.toLocaleString('en-IN')}` },
   ]
 
   return (
@@ -104,7 +109,7 @@ export default function DashboardPage({
               <span
                 className={`dashboard-order-status dashboard-status-${order.status.toLowerCase()}`}
               >
-                {order.status}
+                {orderStatusLabels[order.status]}
               </span>
               <strong>₹{order.total.toLocaleString('en-IN')}</strong>
             </div>

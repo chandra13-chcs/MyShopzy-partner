@@ -10,7 +10,7 @@ export const reportDemoData: Record<ReportPeriod, PeriodReportData> = {
   today: {
     summary: {
       totalSales: 790,
-      completedOrders: 5,
+      deliveredOrders: 5,
       averageOrderValue: 158,
       rejectedOrders: 1,
     },
@@ -40,7 +40,7 @@ export const reportDemoData: Record<ReportPeriod, PeriodReportData> = {
   week: {
     summary: {
       totalSales: 10900,
-      completedOrders: 72,
+      deliveredOrders: 72,
       averageOrderValue: 151,
       rejectedOrders: 4,
     },
@@ -70,7 +70,7 @@ export const reportDemoData: Record<ReportPeriod, PeriodReportData> = {
   month: {
     summary: {
       totalSales: 42850,
-      completedOrders: 286,
+      deliveredOrders: 286,
       averageOrderValue: 150,
       rejectedOrders: 13,
     },

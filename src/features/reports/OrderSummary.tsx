@@ -6,11 +6,15 @@ interface OrderSummaryProps {
 }
 
 const statuses: { label: string; status: OrderStatus }[] = [
-  { label: 'Pending', status: 'PENDING' },
+  { label: 'New', status: 'PENDING' },
   { label: 'Accepted', status: 'ACCEPTED' },
   { label: 'Preparing', status: 'PREPARING' },
   { label: 'Ready', status: 'READY' },
-  { label: 'Completed', status: 'COMPLETED' },
+  { label: 'Finding Rider', status: 'FINDING_RIDER' },
+  { label: 'Rider Assigned', status: 'RIDER_ASSIGNED' },
+  { label: 'Picked Up', status: 'PICKED_UP' },
+  { label: 'On The Way', status: 'ON_THE_WAY' },
+  { label: 'Delivered', status: 'DELIVERED' },
   { label: 'Rejected', status: 'REJECTED' },
 ]
 

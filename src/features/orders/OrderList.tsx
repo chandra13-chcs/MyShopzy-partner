@@ -5,33 +5,35 @@ interface OrderListProps {
   onOpen: (order: DemoOrder) => void
   onStatusChange: (orderId: string, status: DemoOrder['status']) => void
   orders: DemoOrder[]
+  title: string
 }
 
 export function OrderList({
   onOpen,
   onStatusChange,
   orders,
+  title,
 }: OrderListProps) {
-  if (orders.length === 0) {
-    return (
-      <div className="orders-empty-state">
-        <span aria-hidden="true">⌕</span>
-        <h2>No orders found</h2>
-        <p>Try changing the status filter or search term.</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="orders-list">
-      {orders.map((order) => (
-        <OrderCard
-          key={order.id}
-          onOpen={onOpen}
-          onStatusChange={onStatusChange}
-          order={order}
-        />
-      ))}
-    </div>
+    <section className="orders-group" aria-label={title}>
+      <div className="orders-group-heading">
+        <h3>{title}</h3>
+        <span>{orders.length}</span>
+      </div>
+      {orders.length > 0 ? (
+        <div className="orders-list">
+          {orders.map((order) => (
+            <OrderCard
+              key={order.id}
+              onOpen={onOpen}
+              onStatusChange={onStatusChange}
+              order={order}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="orders-group-empty">No orders in this section.</div>
+      )}
+    </section>
   )
 }

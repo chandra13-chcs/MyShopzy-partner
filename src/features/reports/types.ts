@@ -2,7 +2,7 @@ export type ReportPeriod = 'today' | 'week' | 'month'
 
 export interface PeriodSalesSummary {
   totalSales: number
-  completedOrders: number
+  deliveredOrders: number
   averageOrderValue: number
   rejectedOrders: number
 }

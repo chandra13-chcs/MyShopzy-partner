@@ -5,17 +5,19 @@ import { OrderStatusBadge } from './OrderStatusBadge'
 import type { DemoOrder, OrderStatus } from './types'
 import './orders.css'
 
-type OrderFilter = 'ALL' | OrderStatus
+type OrderFilter = 'ALL' | 'PENDING' | 'PREPARING' | 'READY' | 'ON_THE_WAY' | 'DELIVERED' | 'REJECTED'
 
 const filters: { label: string; value: OrderFilter }[] = [
   { label: 'All', value: 'ALL' },
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Accepted', value: 'ACCEPTED' },
+  { label: 'New', value: 'PENDING' },
   { label: 'Preparing', value: 'PREPARING' },
   { label: 'Ready', value: 'READY' },
-  { label: 'Completed', value: 'COMPLETED' },
+  { label: 'On The Way', value: 'ON_THE_WAY' },
+  { label: 'Delivered', value: 'DELIVERED' },
   { label: 'Rejected', value: 'REJECTED' },
 ]
+
+const historyStatuses: OrderStatus[] = ['DELIVERED', 'REJECTED']
 
 interface OrdersWorkspaceProps {
   onStatusChange: (orderId: string, status: OrderStatus) => void
@@ -29,7 +31,7 @@ export default function OrdersWorkspace({
   const [filter, setFilter] = useState<OrderFilter>('ALL')
   const [search, setSearch] = useState('')
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
-  const pendingCount = orders.filter((order) => order.status === 'PENDING').length
+  const newOrderCount = orders.filter((order) => order.status === 'PENDING').length
 
   const visibleOrders = useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
@@ -43,6 +45,16 @@ export default function OrdersWorkspace({
     })
   }, [filter, orders, search])
 
+  const activeOrders = visibleOrders.filter(
+    (order) => !historyStatuses.includes(order.status),
+  )
+  const historyOrders = visibleOrders.filter(
+    (order) => historyStatuses.includes(order.status),
+  )
+  const showActive =
+    filter === 'ALL' || !historyStatuses.includes(filter as OrderStatus)
+  const showHistory =
+    filter === 'ALL' || historyStatuses.includes(filter as OrderStatus)
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
 
   return (
@@ -52,18 +64,18 @@ export default function OrdersWorkspace({
           <p className="page-eyebrow">Order management</p>
           <h1>Orders</h1>
           <p className="page-description">
-            Review incoming orders and keep each order moving.
+            Review new orders, prepare them, and monitor delivery progress.
           </p>
         </div>
         <span className="demo-tag demo-tag-large">LOCAL DEMO</span>
       </div>
 
-      {pendingCount > 0 && (
-        <section className="pending-summary" aria-label="Pending orders">
+      {newOrderCount > 0 && (
+        <section className="pending-summary" aria-label="New orders">
           <span className="pending-summary-icon" aria-hidden="true">!</span>
           <div>
-            <strong>{pendingCount} {pendingCount === 1 ? 'order' : 'orders'} need your attention</strong>
-            <p>Review pending orders and accept or reject them when ready.</p>
+            <strong>{newOrderCount} new {newOrderCount === 1 ? 'order' : 'orders'} need your attention</strong>
+            <p>New orders stay here until you accept or reject them.</p>
           </div>
           <span className="pending-summary-tag">NEW ORDER</span>
         </section>
@@ -107,19 +119,40 @@ export default function OrdersWorkspace({
 
         <div className="orders-list-heading">
           <div>
-            <h2>{filter === 'ALL' ? 'All orders' : `${filters.find((item) => item.value === filter)?.label} orders`}</h2>
+            <h2>{filter === 'ALL' ? 'Orders' : `${filters.find((item) => item.value === filter)?.label} orders`}</h2>
             <p>{visibleOrders.length} {visibleOrders.length === 1 ? 'order' : 'orders'} shown</p>
           </div>
-          {filter !== 'ALL' && (
+          {filter !== 'ALL' && filter !== 'PENDING' && (
             <OrderStatusBadge status={filter} />
           )}
         </div>
 
-        <OrderList
-          onOpen={(order) => setSelectedOrderId(order.id)}
-          onStatusChange={onStatusChange}
-          orders={visibleOrders}
-        />
+        {visibleOrders.length === 0 ? (
+          <div className="orders-empty-state">
+            <span aria-hidden="true">⌕</span>
+            <h2>No orders found</h2>
+            <p>Try changing the status filter or search term.</p>
+          </div>
+        ) : (
+          <div className="orders-groups">
+            {showActive && (
+              <OrderList
+                onOpen={(order) => setSelectedOrderId(order.id)}
+                onStatusChange={onStatusChange}
+                orders={activeOrders}
+                title="Active orders"
+              />
+            )}
+            {showHistory && (
+              <OrderList
+                onOpen={(order) => setSelectedOrderId(order.id)}
+                onStatusChange={onStatusChange}
+                orders={historyOrders}
+                title="Order history"
+              />
+            )}
+          </div>
+        )}
       </section>
 
       {selectedOrder && (

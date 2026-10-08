@@ -94,7 +94,7 @@
   color: #3153bd;
 }
 
-.tone-completed {
+.tone-delivered {
   background: #eaf7ef;
   color: #237246;
 }
@@ -305,8 +305,28 @@
   background: #48a69c;
 }
 
-.order-summary-dot.order-summary-completed,
-.order-summary-bar.order-summary-completed {
+.order-summary-dot.order-summary-finding_rider,
+.order-summary-bar.order-summary-finding_rider {
+  background: #e8ac42;
+}
+
+.order-summary-dot.order-summary-rider_assigned,
+.order-summary-bar.order-summary-rider_assigned {
+  background: #5276e8;
+}
+
+.order-summary-dot.order-summary-picked_up,
+.order-summary-bar.order-summary-picked_up {
+  background: #48a69c;
+}
+
+.order-summary-dot.order-summary-on_the_way,
+.order-summary-bar.order-summary-on_the_way {
+  background: #4388c1;
+}
+
+.order-summary-dot.order-summary-delivered,
+.order-summary-bar.order-summary-delivered {
   background: #40a06b;
 }
 
