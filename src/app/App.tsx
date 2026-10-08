@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
+import ProductsWorkspace from '../features/products/ProductsWorkspace'
 import DashboardPage from '../pages/DashboardPage'
 import LoginPage from '../pages/LoginPage'
 import { resolveRoute, type AppRoute } from './routes'
@@ -32,6 +33,8 @@ function App() {
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
       />
     )
+  } else if (route.path === '/products') {
+    page = <ProductsWorkspace />
   } else if (route.path === '/login') {
     page = <LoginPage />
   } else {
