@@ -4,6 +4,7 @@ import OrdersWorkspace from '../features/orders/OrdersWorkspace'
 import { initialOrders } from '../features/orders/orderDemoData'
 import type { OrderStatus } from '../features/orders/types'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
+import ReportsWorkspace from '../features/reports/ReportsWorkspace'
 import StoreWorkspace from '../features/store/StoreWorkspace'
 import { initialOperatingHours, initialStoreProfile } from '../features/store/storeDemoData'
 import type { StoreProfile } from '../features/store/types'
@@ -85,6 +86,8 @@ function App() {
         storeOpen={storeOpen}
       />
     )
+  } else if (route.path === '/reports') {
+    page = <ReportsWorkspace orders={orders} />
   } else if (route.path === '/login') {
     page = <LoginPage />
   } else {
