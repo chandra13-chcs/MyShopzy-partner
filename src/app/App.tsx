@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
+import StoreWorkspace from '../features/store/StoreWorkspace'
+import { initialOperatingHours, initialStoreProfile } from '../features/store/storeDemoData'
+import type { StoreProfile } from '../features/store/types'
 import DashboardPage from '../pages/DashboardPage'
 import LoginPage from '../pages/LoginPage'
 import { resolveRoute, type AppRoute } from './routes'
@@ -10,6 +13,8 @@ function App() {
     resolveRoute(window.location.pathname),
   )
   const [storeOpen, setStoreOpen] = useState(true)
+  const [storeProfile, setStoreProfile] = useState(initialStoreProfile)
+  const [operatingHours, setOperatingHours] = useState(initialOperatingHours)
 
   useEffect(() => {
     function syncRoute() {
@@ -29,12 +34,25 @@ function App() {
   if (route.path === '/') {
     page = (
       <DashboardPage
+        businessType={storeProfile.businessType}
+        businessName={storeProfile.businessName}
         storeOpen={storeOpen}
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
       />
     )
   } else if (route.path === '/products') {
     page = <ProductsWorkspace />
+  } else if (route.path === '/store') {
+    page = (
+      <StoreWorkspace
+        operatingHours={operatingHours}
+        onSaveHours={setOperatingHours}
+        onSaveProfile={(profile: StoreProfile) => setStoreProfile(profile)}
+        onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
+        profile={storeProfile}
+        storeOpen={storeOpen}
+      />
+    )
   } else if (route.path === '/login') {
     page = <LoginPage />
   } else {
@@ -52,6 +70,7 @@ function App() {
   return (
     <AppShell
       activePath={route.path}
+      businessName={storeProfile.businessName}
       onNavigate={navigate}
       storeOpen={storeOpen}
     >

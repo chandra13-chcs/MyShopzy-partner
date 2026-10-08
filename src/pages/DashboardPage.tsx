@@ -1,4 +1,8 @@
+import type { BusinessType } from '../features/store/types'
+
 interface DashboardPageProps {
+  businessName: string
+  businessType: BusinessType
   storeOpen: boolean
   onToggleStore: () => void
 }
@@ -11,6 +15,8 @@ const metrics = [
 ]
 
 export default function DashboardPage({
+  businessName,
+  businessType,
   storeOpen,
   onToggleStore,
 }: DashboardPageProps) {
@@ -19,7 +25,7 @@ export default function DashboardPage({
       <div className="dashboard-heading">
         <div>
           <p className="page-eyebrow">Overview</p>
-          <h1>Good day, Demo Business</h1>
+          <h1>Good day, {businessName}</h1>
           <p className="page-description">
             Here’s what’s happening with your business today.
           </p>
@@ -32,10 +38,10 @@ export default function DashboardPage({
           DB
         </div>
         <div className="business-summary-info">
-          <h2>Demo Business</h2>
-          <p>Restaurant</p>
+          <h2>{businessName}</h2>
+          <p>{businessType}</p>
         </div>
-        <span className="business-type">Restaurant</span>
+        <span className="business-type">{businessType}</span>
       </section>
 
       <section

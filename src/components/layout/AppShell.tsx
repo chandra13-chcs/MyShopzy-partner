@@ -3,6 +3,7 @@ import { routes } from '../../app/routes'
 
 interface AppShellProps {
   activePath: string
+  businessName: string
   children: ReactNode
   onNavigate: (path: string) => void
   storeOpen: boolean
@@ -69,6 +70,7 @@ function NavigationIcon({ path }: { path: string }) {
 
 export function AppShell({
   activePath,
+  businessName,
   children,
   onNavigate,
   storeOpen,
@@ -101,10 +103,10 @@ export function AppShell({
         </a>
         <div className="sidebar-business">
           <span className="business-avatar" aria-hidden="true">
-            D
+            {businessName.slice(0, 1).toUpperCase()}
           </span>
           <span className="business-copy">
-            <strong>Demo Business</strong>
+            <strong>{businessName}</strong>
             <span>Partner account</span>
           </span>
         </div>
@@ -143,7 +145,7 @@ export function AppShell({
             <span>MyShopzy Partner</span>
           </a>
           <div className="topbar-business">
-            <span className="business-name">Demo Business</span>
+            <span className="business-name">{businessName}</span>
             <span className="status-pill">
               <span className={`status-dot${storeOpen ? ' is-open' : ''}`} />
               {storeStatus}
@@ -155,7 +157,7 @@ export function AppShell({
             title="Profile menu coming soon"
             type="button"
           >
-            <span aria-hidden="true">D</span>
+            <span aria-hidden="true">{businessName.slice(0, 1).toUpperCase()}</span>
           </button>
         </header>
 
