@@ -1,25 +1,32 @@
 import type { BusinessType } from '../features/store/types'
+import type { DemoOrder } from '../features/orders/types'
 
 interface DashboardPageProps {
   businessName: string
   businessType: BusinessType
+  orders: DemoOrder[]
   storeOpen: boolean
   onToggleStore: () => void
 }
 
-const metrics = [
-  { label: "Today's Orders", value: '0', note: 'Orders received today' },
-  { label: 'Pending Orders', value: '0', note: 'Waiting for your action' },
-  { label: "Today's Sales", value: '₹0', note: 'Sales so far today' },
-  { label: 'Products', value: '0', note: 'Listed in your store' },
-]
-
 export default function DashboardPage({
   businessName,
   businessType,
+  orders,
   storeOpen,
   onToggleStore,
 }: DashboardPageProps) {
+  const pendingOrders = orders.filter((order) => order.status === 'PENDING').length
+  const completedSales = orders
+    .filter((order) => order.status === 'COMPLETED')
+    .reduce((total, order) => total + order.total, 0)
+  const metrics = [
+    { label: "Today's Orders", value: String(orders.length), note: 'Demo orders today' },
+    { label: 'Pending Orders', value: String(pendingOrders), note: 'Waiting for your action' },
+    { label: "Today's Sales", value: `₹${completedSales.toLocaleString('en-IN')}`, note: 'Completed demo orders' },
+    { label: 'Products', value: '0', note: 'Listed in your store' },
+  ]
+
   return (
     <div className="dashboard">
       <div className="dashboard-heading">
@@ -85,26 +92,23 @@ export default function DashboardPage({
         <div className="panel-heading">
           <div>
             <h2 id="orders-title">Recent orders</h2>
-            <p>Your latest orders will show up here.</p>
+            <p>Recent demo orders and their current status.</p>
           </div>
-          <span className="order-count">0 orders</span>
+          <span className="order-count">{orders.length} orders</span>
         </div>
-        <div className="empty-state">
-          <span className="empty-state-icon" aria-hidden="true">
-            <svg
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path d="M4 5h16v15H4zM8 9h8M8 13h5" />
-              <path d="m8 3 1 2m6-2-1 2" />
-            </svg>
-          </span>
-          <h3>No orders yet</h3>
-          <p>New orders will appear here.</p>
+        <div className="dashboard-order-list">
+          {orders.slice(0, 4).map((order) => (
+            <div className="dashboard-order-row" key={order.id}>
+              <span className="dashboard-order-id">#{order.id}</span>
+              <span className="dashboard-order-customer">{order.customerName}</span>
+              <span
+                className={`dashboard-order-status dashboard-status-${order.status.toLowerCase()}`}
+              >
+                {order.status}
+              </span>
+              <strong>₹{order.total.toLocaleString('en-IN')}</strong>
+            </div>
+          ))}
         </div>
       </section>
     </div>
