@@ -1,30 +1,25 @@
 import { useEffect } from 'react'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { formatCustomerPhone, normalizeDemoOrder } from './orderState'
-import {
-  demoRiderStatuses,
-  type DemoOrder,
-  type OrderStatus,
-} from './types'
+import type { DemoOrder, OrderStatus, RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
-import { orderStatusTranslationKeys } from '../../i18n/translations'
+import {
+  orderStatusTranslationKeys,
+  riderStatusTranslationKeys,
+} from '../../i18n/translations'
 
 interface OrderDetailsProps {
   onClose: () => void
   onStatusChange: (orderId: string, status: OrderStatus) => void
+  onDeliveryStatusChange: (orderId: string, status: RiderStatus) => void
   order: DemoOrder
 }
 
 const deliverySteps: OrderStatus[] = [
   'PENDING',
-  'ACCEPTED',
   'PREPARING',
-  'READY',
-  'FINDING_RIDER',
-  'RIDER_ASSIGNED',
-  'PICKED_UP',
-  'ON_THE_WAY',
-  'DELIVERED',
+  'READY_FOR_PICKUP',
+  'COMPLETED',
 ]
 
 function partnerAction(status: OrderStatus) {
@@ -34,15 +29,17 @@ function partnerAction(status: OrderStatus) {
     case 'ACCEPTED':
       return { label: 'orders.startPreparing' as const, status: 'PREPARING' as const }
     case 'PREPARING':
-      return { label: 'orders.markReady' as const, status: 'READY' as const }
+      return { label: 'orders.markReady' as const, status: 'READY_FOR_PICKUP' as const }
+    case 'READY_FOR_PICKUP':
+      return { label: 'orders.completeOrder' as const, status: 'COMPLETED' as const }
     default:
       return undefined
   }
 }
 
-function demoAction(status: OrderStatus) {
+function demoAction(status?: RiderStatus) {
   switch (status) {
-    case 'READY':
+    case undefined:
       return { label: 'orders.simulateAssignment' as const, status: 'FINDING_RIDER' as const }
     case 'FINDING_RIDER':
       return { label: 'orders.simulateAssignment' as const, status: 'RIDER_ASSIGNED' as const }
@@ -64,6 +61,7 @@ function formatPrice(value: number) {
 export function OrderDetails({
   onClose,
   onStatusChange,
+  onDeliveryStatusChange,
   order: rawOrder,
 }: OrderDetailsProps) {
   const { t } = useLanguage()
@@ -97,14 +95,30 @@ export function OrderDetails({
   }
 
   const action = partnerAction(order.status)
-  const simulatedAction = demoAction(order.status)
+  const simulatedAction =
+    (order.status === 'READY_FOR_PICKUP' || order.status === 'COMPLETED')
+      ? demoAction(order.deliveryStatus)
+      : undefined
   const rejected = order.status === 'REJECTED'
   const visibleSteps = rejected
     ? (['PENDING', 'REJECTED'] as OrderStatus[])
     : deliverySteps
-  const history = new Map(
-    order.statusHistory.map((event) => [event.status, event.timestamp]),
-  )
+  const stepForStatus = (status: OrderStatus) =>
+    status === 'ACCEPTED' ? 'PREPARING' : status
+  const history = new Map<OrderStatus, string>()
+  for (const event of order.statusHistory) {
+    if (
+      event.status === 'PENDING' ||
+      event.status === 'ACCEPTED' ||
+      event.status === 'PREPARING' ||
+      event.status === 'READY_FOR_PICKUP' ||
+      event.status === 'COMPLETED' ||
+      event.status === 'REJECTED'
+    ) {
+      history.set(stepForStatus(event.status), event.timestamp)
+    }
+  }
+  const currentStage = stepForStatus(order.status)
 
   return (
     <div className="order-details-backdrop" onMouseDown={onClose}>
@@ -291,24 +305,15 @@ export function OrderDetails({
             aria-label={t('orders.timeline')}
           >
             <h3>{t('orders.timeline')}</h3>
-            {order.status !== 'PENDING' &&
-              order.status !== 'ACCEPTED' &&
-              order.status !== 'PREPARING' &&
-              order.status !== 'REJECTED' && (
-                <p className="order-rider-demo-note">
-                  {t('orders.riderDemoNote')}
-                </p>
-              )}
             <ol className="order-timeline">
               {visibleSteps.map((status, index) => {
                 const timestamp = history.get(status)
-                const isCurrent = order.status === status
-                const currentIndex = visibleSteps.indexOf(order.status)
+                const isCurrent = currentStage === status
+                const currentIndex = visibleSteps.indexOf(currentStage)
                 const isComplete =
                   !isCurrent &&
                   (Boolean(timestamp) ||
                     (currentIndex >= 0 && index < currentIndex))
-                const isRiderStep = demoRiderStatuses.includes(status)
                 return (
                   <li
                     className={`order-timeline-step${isComplete ? ' is-complete' : ''}${isCurrent ? ' is-current' : ''}`}
@@ -319,12 +324,10 @@ export function OrderDetails({
                     </span>
                     <span className="order-timeline-copy">
                       <strong>{t(orderStatusTranslationKeys[status])}</strong>
-                      <span className={`order-timeline-owner${isRiderStep ? ' is-demo' : ''}`}>
-                        {isRiderStep
-                          ? t('orders.riderDemo')
-                          : status === 'PENDING'
-                            ? t('orders.customerActor')
-                            : t('orders.partner')}
+                      <span className="order-timeline-owner">
+                        {status === 'PENDING'
+                          ? t('orders.customerActor')
+                          : t('orders.partner')}
                       </span>
                       {timestamp && <small>{timestamp}</small>}
                     </span>
@@ -337,28 +340,91 @@ export function OrderDetails({
             )}
           </section>
 
-          {order.rider && (
+          {(order.rider ||
+            order.deliveryStatus ||
+            order.status === 'READY_FOR_PICKUP' ||
+            order.status === 'COMPLETED') && (
             <section className="order-detail-section order-rider-section">
-              <h3>{t('orders.delivery')} <span>{t('orders.riderAssignment')}</span></h3>
+              <h3>{t('orders.deliveryTracking')} <span>{t('orders.riderAssignment')}</span></h3>
+              <p className="order-rider-demo-note">{t('orders.riderDemoNote')}</p>
+              {order.deliveryStatus && (
+                <p>
+                  {t('orders.riderStatus', {
+                    status: t(riderStatusTranslationKeys[order.deliveryStatus]),
+                  })}
+                </p>
+              )}
+              {order.statusHistory.some(
+                (event) =>
+                  event.status === 'FINDING_RIDER' ||
+                  event.status === 'RIDER_ASSIGNED' ||
+                  event.status === 'PICKED_UP' ||
+                  event.status === 'ON_THE_WAY' ||
+                  event.status === 'DELIVERED',
+              ) && (
+                <ol className="order-timeline order-delivery-timeline">
+                  {order.statusHistory.flatMap((event, index) => {
+                    if (
+                      event.status !== 'FINDING_RIDER' &&
+                      event.status !== 'RIDER_ASSIGNED' &&
+                      event.status !== 'PICKED_UP' &&
+                      event.status !== 'ON_THE_WAY' &&
+                      event.status !== 'DELIVERED'
+                    ) {
+                      return []
+                    }
+                    return (
+                      <li className="order-timeline-step is-complete" key={`${event.status}-${index}`}>
+                        <span className="order-timeline-marker" aria-hidden="true">✓</span>
+                        <span className="order-timeline-copy">
+                          <strong>{t(riderStatusTranslationKeys[event.status])}</strong>
+                          <span className="order-timeline-owner is-demo">{t('orders.riderDemo')}</span>
+                          <small>{event.timestamp}</small>
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ol>
+              )}
               <dl className="order-detail-grid">
-                <div><dt>{t('orders.riderName')}</dt><dd>{order.rider.name}</dd></div>
-                <div><dt>{t('orders.riderId')}</dt><dd>{order.rider.id}</dd></div>
-                {order.rider.vehicle && (
-                  <div><dt>{t('orders.vehicle')}</dt><dd>{order.rider.vehicle}</dd></div>
+                {order.rider && (
+                  <>
+                    <div><dt>{t('orders.riderName')}</dt><dd>{order.rider.name}</dd></div>
+                    <div><dt>{t('orders.riderId')}</dt><dd>{order.rider.id}</dd></div>
+                    {order.rider.vehicle && (
+                      <div><dt>{t('orders.vehicle')}</dt><dd>{order.rider.vehicle}</dd></div>
+                    )}
+                  </>
                 )}
               </dl>
-              {order.status === 'RIDER_ASSIGNED' && (
+              {order.deliveryStatus === 'RIDER_ASSIGNED' && (
                 <p>{t('orders.riderComing')}</p>
               )}
-              {order.status === 'PICKED_UP' && <p>{t('orders.pickedUpMessage')}</p>}
-              {order.status === 'ON_THE_WAY' && <p>{t('orders.onTheWayMessage')}</p>}
+              {order.deliveryStatus === 'PICKED_UP' && <p>{t('orders.pickedUpMessage')}</p>}
+              {order.deliveryStatus === 'ON_THE_WAY' && <p>{t('orders.onTheWayMessage')}</p>}
+              {simulatedAction && (
+                <div className="order-rider-demo-actions">
+                  <span>{t('orders.simulationOnly')}</span>
+                  <button
+                    className="order-action-button order-action-demo"
+                    onClick={() =>
+                      onDeliveryStatusChange(order.id, simulatedAction.status)
+                    }
+                    type="button"
+                  >
+                    {t('orders.riderDemoButton', {
+                      action: t(simulatedAction.label),
+                    })}
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
-          {order.status === 'READY' && (
+          {order.status === 'READY_FOR_PICKUP' && (
             <p className="order-delivery-waiting">{t('orders.readyWaiting')}</p>
           )}
-          {order.status === 'FINDING_RIDER' && (
+          {order.deliveryStatus === 'FINDING_RIDER' && (
             <p className="order-delivery-waiting">{t('orders.findingDelivery')}</p>
           )}
           {rejected && order.rejectionReason && (
@@ -369,8 +435,8 @@ export function OrderDetails({
           )}
         </div>
 
-        {(action || simulatedAction) && (
-          <footer className={`order-details-actions${simulatedAction ? ' is-demo-simulation' : ''}`}>
+        {action && (
+          <footer className="order-details-actions">
             {order.status === 'PENDING' && (
               <button
                 className="order-action-button order-action-reject"
@@ -383,29 +449,22 @@ export function OrderDetails({
             {action && (
               <button
                 className={`order-action-button${order.status === 'PENDING' ? ' order-action-accept' : ' order-action-progress'}`}
-                onClick={() => onStatusChange(order.id, action.status)}
+                onClick={() => {
+                  if (
+                    action.status !== 'COMPLETED' ||
+                    window.confirm(t('orders.confirmComplete'))
+                  ) {
+                    onStatusChange(order.id, action.status)
+                  }
+                }}
                 type="button"
               >
                 {t(action.label)}
               </button>
             )}
-            {simulatedAction && (
-              <>
-                <span>{t('orders.simulationOnly')}</span>
-                <button
-                  className="order-action-button order-action-demo"
-                  onClick={() => onStatusChange(order.id, simulatedAction.status)}
-                  type="button"
-                >
-                  {t('orders.riderDemoButton', {
-                    action: t(simulatedAction.label),
-                  })}
-                </button>
-              </>
-            )}
           </footer>
         )}
-        {order.status === 'DELIVERED' && (
+        {order.status === 'COMPLETED' && (
           <footer className="order-details-final">{t('orders.deliveredHistory')}</footer>
         )}
         {rejected && (

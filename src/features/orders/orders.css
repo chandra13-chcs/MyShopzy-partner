@@ -203,7 +203,7 @@
 }
 
 .orders-filter.is-active {
-  color: #254bc5;
+  color: var(--brand-primary);
 }
 
 .orders-filter.is-active::after {
@@ -212,7 +212,7 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: #315bea;
+  background: var(--brand-primary);
   content: "";
 }
 
@@ -229,8 +229,8 @@
 }
 
 .orders-filter.is-active span {
-  background: #e9efff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .orders-list-heading {
@@ -416,7 +416,7 @@
 
 .order-card-main:hover .order-card-id,
 .order-card-main:hover .order-card-customer {
-  color: #254bc5;
+  color: var(--brand-primary);
 }
 
 .order-card-topline,
@@ -523,8 +523,8 @@
 }
 
 .status-accepted {
-  background: #edf2ff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .status-preparing {
@@ -537,14 +537,24 @@
   color: #26736d;
 }
 
+.status-ready_for_pickup {
+  background: #e5f5f4;
+  color: #26736d;
+}
+
+.status-completed {
+  background: #eaf7ef;
+  color: #237246;
+}
+
 .status-finding_rider {
   background: #fff3df;
   color: #89600f;
 }
 
 .status-rider_assigned {
-  background: #edf2ff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .status-picked_up {
@@ -601,14 +611,14 @@
 }
 
 .order-action-accept {
-  border-color: #315bea;
-  background: #315bea;
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
   color: #fff;
 }
 
 .order-action-accept:hover {
-  border-color: #254bc5;
-  background: #254bc5;
+  border-color: var(--brand-dark);
+  background: var(--brand-dark);
 }
 
 .order-action-reject {
@@ -621,12 +631,14 @@
 }
 
 .order-action-progress {
-  border-color: #dfe4ed;
-  color: #46536a;
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: #fff;
 }
 
 .order-action-progress:hover {
-  background: #f6f8fb;
+  border-color: var(--brand-dark);
+  background: var(--brand-dark);
 }
 
 .orders-empty-state {
@@ -709,7 +721,7 @@
 .orders-eyebrow {
   display: block;
   margin-bottom: 4px;
-  color: #315bea;
+  color: var(--brand-primary);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -919,9 +931,9 @@
 }
 
 .order-timeline-step.is-current .order-timeline-marker {
-  border: 4px solid #315bea;
+  border: 4px solid var(--brand-primary);
   background: #fff;
-  box-shadow: 0 0 0 3px #e9efff;
+  box-shadow: 0 0 0 3px var(--brand-primary-soft);
 }
 
 .order-timeline-copy {
@@ -1005,6 +1017,18 @@
   font-size: 10px;
 }
 
+.order-rider-demo-actions {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.order-rider-demo-actions > span {
+  color: #7b8596;
+  font-size: 9px;
+}
+
 .order-delivery-waiting,
 .order-rejection-reason {
   display: grid;
@@ -1052,13 +1076,13 @@
 }
 
 .order-action-demo {
-  border-color: #d8e1f7;
-  background: #f4f7ff;
-  color: #3153bd;
+  border-color: var(--brand-primary);
+  background: var(--surface-white);
+  color: var(--brand-primary);
 }
 
 .order-action-demo:hover {
-  background: #eaf0ff;
+  background: var(--brand-primary-soft);
 }
 
 .order-details-final {

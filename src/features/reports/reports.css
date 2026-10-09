@@ -60,7 +60,7 @@
 
 .report-period-button.is-active {
   background: #fff;
-  color: #254bc5;
+  color: var(--brand-primary);
   box-shadow: 0 1px 3px rgb(22 35 66 / 10%);
 }
 
@@ -90,8 +90,8 @@
 }
 
 .tone-sales {
-  background: #edf2ff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .tone-delivered {
@@ -303,6 +303,16 @@
 .order-summary-dot.order-summary-ready,
 .order-summary-bar.order-summary-ready {
   background: #48a69c;
+}
+
+.order-summary-dot.order-summary-ready_for_pickup,
+.order-summary-bar.order-summary-ready_for_pickup {
+  background: #48a69c;
+}
+
+.order-summary-dot.order-summary-completed,
+.order-summary-bar.order-summary-completed {
+  background: #40a06b;
 }
 
 .order-summary-dot.order-summary-finding_rider,

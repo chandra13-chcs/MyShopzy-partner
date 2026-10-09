@@ -6,15 +6,10 @@ interface OrderSummaryProps {
 }
 
 const statuses: { label: string; status: OrderStatus }[] = [
-  { label: 'New', status: 'PENDING' },
-  { label: 'Accepted', status: 'ACCEPTED' },
-  { label: 'Preparing', status: 'PREPARING' },
-  { label: 'Ready', status: 'READY' },
-  { label: 'Finding Rider', status: 'FINDING_RIDER' },
-  { label: 'Rider Assigned', status: 'RIDER_ASSIGNED' },
-  { label: 'Picked Up', status: 'PICKED_UP' },
-  { label: 'On The Way', status: 'ON_THE_WAY' },
-  { label: 'Delivered', status: 'DELIVERED' },
+  { label: 'New Order', status: 'PENDING' },
+  { label: 'Preparing Food', status: 'PREPARING' },
+  { label: 'Ready for Pickup', status: 'READY_FOR_PICKUP' },
+  { label: 'Order Complete', status: 'COMPLETED' },
   { label: 'Rejected', status: 'REJECTED' },
 ]
 
@@ -30,7 +25,11 @@ export function OrderSummary({ orders }: OrderSummaryProps) {
       </div>
       <div className="order-summary-list">
         {statuses.map(({ label, status }) => {
-          const count = orders.filter((order) => order.status === status).length
+          const count = orders.filter((order) =>
+            status === 'PREPARING'
+              ? order.status === 'ACCEPTED' || order.status === 'PREPARING'
+              : order.status === status,
+          ).length
           return (
             <div className="order-summary-row" key={status}>
               <span className={`order-summary-dot order-summary-${status.toLowerCase()}`} />

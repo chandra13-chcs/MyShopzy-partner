@@ -25,7 +25,7 @@ export default function DashboardPage({
   const pendingCount = orders.filter((order) => order.status === 'PENDING').length
   const todaysOrders = orders.filter(isFromToday)
   const deliveredToday = todaysOrders.filter(
-    (order) => order.status === 'DELIVERED',
+    (order) => order.status === 'COMPLETED',
   )
   const hasAllSalesTotals = deliveredToday.every(
     (order) => order.total !== undefined,
@@ -37,7 +37,7 @@ export default function DashboardPage({
   const activeOrders = orders
     .filter(
       (order) =>
-        order.status !== 'DELIVERED' &&
+        order.status !== 'COMPLETED' &&
         order.status !== 'REJECTED' &&
         order.status !== 'UNKNOWN',
     )

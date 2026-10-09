@@ -3,7 +3,7 @@ import { OrderDetails } from './OrderDetails'
 import { OrderList } from './OrderList'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { normalizeDemoOrders } from './orderState'
-import type { DemoOrder, OrderStatus } from './types'
+import type { DemoOrder, OrderStatus, RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import type { TranslationKey } from '../../i18n/translations'
 import './orders.css'
@@ -13,26 +13,31 @@ type OrderFilter = 'ALL' | OrderStatus
 const filters: { label: TranslationKey; value: OrderFilter }[] = [
   { label: 'orders.all', value: 'ALL' },
   { label: 'orders.new', value: 'PENDING' },
-  { label: 'orders.accepted', value: 'ACCEPTED' },
   { label: 'orders.preparing', value: 'PREPARING' },
-  { label: 'orders.ready', value: 'READY' },
-  { label: 'orders.findingRider', value: 'FINDING_RIDER' },
-  { label: 'orders.riderAssigned', value: 'RIDER_ASSIGNED' },
-  { label: 'orders.pickedUp', value: 'PICKED_UP' },
-  { label: 'orders.onTheWay', value: 'ON_THE_WAY' },
-  { label: 'orders.delivered', value: 'DELIVERED' },
+  { label: 'orders.ready', value: 'READY_FOR_PICKUP' },
+  { label: 'orders.completed', value: 'COMPLETED' },
   { label: 'orders.rejected', value: 'REJECTED' },
 ]
 
-const historyStatuses: OrderStatus[] = ['DELIVERED', 'REJECTED']
+const historyStatuses: OrderStatus[] = ['COMPLETED', 'REJECTED']
+
+function matchesFilter(order: DemoOrder, filter: OrderFilter) {
+  if (filter === 'ALL') return true
+  if (filter === 'PREPARING') {
+    return order.status === 'ACCEPTED' || order.status === 'PREPARING'
+  }
+  return order.status === filter
+}
 
 interface OrdersWorkspaceProps {
   onStatusChange: (orderId: string, status: OrderStatus) => void
+  onDeliveryStatusChange: (orderId: string, status: RiderStatus) => void
   orders: DemoOrder[]
 }
 
 export default function OrdersWorkspace({
   onStatusChange,
+  onDeliveryStatusChange,
   orders,
 }: OrdersWorkspaceProps) {
   const { t } = useLanguage()
@@ -45,7 +50,7 @@ export default function OrdersWorkspace({
   const visibleOrders = useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
     return safeOrders.filter((order) => {
-      const matchesFilter = filter === 'ALL' || order.status === filter
+      const matchesOrderFilter = matchesFilter(order, filter)
       const matchesSearch =
         !query ||
         order.id.toLocaleLowerCase().includes(query) ||
@@ -53,7 +58,7 @@ export default function OrdersWorkspace({
         order.items.some((item) =>
           item.productName.toLocaleLowerCase().includes(query),
         )
-      return matchesFilter && matchesSearch
+      return matchesOrderFilter && matchesSearch
     })
   }, [filter, safeOrders, search])
 
@@ -128,7 +133,7 @@ export default function OrdersWorkspace({
             const count =
               item.value === 'ALL'
                 ? safeOrders.length
-                : safeOrders.filter((order) => order.status === item.value).length
+                : safeOrders.filter((order) => matchesFilter(order, item.value)).length
             return (
               <button
                 aria-selected={filter === item.value}
@@ -196,6 +201,7 @@ export default function OrdersWorkspace({
       {selectedOrder && (
         <OrderDetails
           onClose={() => setSelectedOrderId(undefined)}
+          onDeliveryStatusChange={onDeliveryStatusChange}
           onStatusChange={onStatusChange}
           order={selectedOrder}
         />

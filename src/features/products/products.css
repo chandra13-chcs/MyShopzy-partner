@@ -43,7 +43,7 @@
 }
 
 .products-tab.is-active {
-  color: #254bc5;
+  color: var(--brand-primary);
 }
 
 .products-tab.is-active::after {
@@ -52,7 +52,7 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: #315bea;
+  background: var(--brand-primary);
   content: "";
 }
 
@@ -86,12 +86,12 @@
 }
 
 .products-button-primary {
-  background: #315bea;
+  background: var(--brand-primary);
   color: #fff;
 }
 
 .products-button-primary:hover {
-  background: #254bc5;
+  background: var(--brand-dark);
 }
 
 .products-button-secondary {
@@ -249,7 +249,7 @@
   height: 16px;
   margin-left: 7px;
   vertical-align: middle;
-  accent-color: #315bea;
+  accent-color: var(--brand-primary);
   cursor: pointer;
 }
 
@@ -265,7 +265,7 @@
   padding: 5px 2px;
   border: 0;
   background: transparent;
-  color: #3153bd;
+  color: var(--brand-primary);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -393,7 +393,7 @@
 
 .products-dialog-eyebrow {
   margin: 0 0 5px;
-  color: #315bea;
+  color: var(--brand-primary);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -577,7 +577,7 @@
 }
 
 .availability-control input:checked + .availability-switch {
-  background: #315bea;
+  background: var(--brand-primary);
 }
 
 .availability-control input:checked + .availability-switch::after {
@@ -585,7 +585,7 @@
 }
 
 .availability-control input:focus-visible + .availability-switch {
-  outline: 3px solid #87a4ff;
+  outline: 3px solid var(--brand-primary);
   outline-offset: 2px;
 }
 

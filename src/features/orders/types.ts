@@ -2,36 +2,29 @@ export type OrderStatus =
   | 'PENDING'
   | 'ACCEPTED'
   | 'PREPARING'
-  | 'READY'
+  | 'READY_FOR_PICKUP'
+  | 'COMPLETED'
+  | 'REJECTED'
+  | 'UNKNOWN'
+
+export type RiderStatus =
   | 'FINDING_RIDER'
   | 'RIDER_ASSIGNED'
   | 'PICKED_UP'
   | 'ON_THE_WAY'
   | 'DELIVERED'
-  | 'REJECTED'
-  | 'UNKNOWN'
 
-export const demoRiderStatuses: OrderStatus[] = [
-  'FINDING_RIDER',
-  'RIDER_ASSIGNED',
-  'PICKED_UP',
-  'ON_THE_WAY',
-  'DELIVERED',
-]
+export type TrackedOrderStatus = OrderStatus | RiderStatus
 
 export type PaymentMethod = 'UPI' | 'Cash on Delivery'
 export type PaymentStatus = 'PAID' | 'PAYMENT_DUE' | 'REFUNDED'
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
-  PENDING: 'New',
-  ACCEPTED: 'Accepted',
-  PREPARING: 'Preparing',
-  READY: 'Ready',
-  FINDING_RIDER: 'Finding Rider',
-  RIDER_ASSIGNED: 'Rider Assigned',
-  PICKED_UP: 'Picked Up',
-  ON_THE_WAY: 'On The Way',
-  DELIVERED: 'Delivered',
+  PENDING: 'New Order',
+  ACCEPTED: 'Preparing Food',
+  PREPARING: 'Preparing Food',
+  READY_FOR_PICKUP: 'Ready for Pickup',
+  COMPLETED: 'Order Complete',
   REJECTED: 'Rejected',
   UNKNOWN: 'Status unavailable',
 }
@@ -47,7 +40,7 @@ export interface OrderItem {
 }
 
 export interface OrderTimelineEvent {
-  status: OrderStatus
+  status: TrackedOrderStatus
   timestamp: string
 }
 
@@ -68,6 +61,7 @@ export interface DemoOrder {
   taxes?: number
   total?: number
   status: OrderStatus
+  deliveryStatus?: RiderStatus
   address: string
   area: string
   city: string
@@ -78,5 +72,6 @@ export interface DemoOrder {
   statusHistory: OrderTimelineEvent[]
   rider?: DemoRider
   deliveredAt?: string
+  completedAt?: string
   rejectionReason?: string
 }

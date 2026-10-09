@@ -183,14 +183,14 @@
 }
 
 .store-primary-button {
-  border-color: #315bea;
-  background: #315bea;
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
   color: #fff;
 }
 
 .store-primary-button:hover {
-  border-color: #254bc5;
-  background: #254bc5;
+  border-color: var(--brand-dark);
+  background: var(--brand-dark);
 }
 
 .store-section {
@@ -393,7 +393,7 @@
 }
 
 .store-day-toggle input:checked + .store-switch {
-  background: #315bea;
+  background: var(--brand-primary);
 }
 
 .store-day-toggle input:checked + .store-switch::after {
@@ -401,7 +401,7 @@
 }
 
 .store-day-toggle input:focus-visible + .store-switch {
-  outline: 3px solid #87a4ff;
+  outline: 3px solid var(--brand-primary);
   outline-offset: 2px;
 }
 

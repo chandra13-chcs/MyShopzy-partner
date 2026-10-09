@@ -50,8 +50,8 @@
 
 .business-icon,
 .app-icon {
-  background: #edf2ff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .notification-icon {
@@ -60,8 +60,8 @@
 }
 
 .legal-icon {
-  background: #e5f5f4;
-  color: #26736d;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .account-icon {
@@ -193,13 +193,13 @@
 }
 
 .settings-button-primary {
-  border-color: #315bea;
-  background: #315bea;
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
   color: #fff;
 }
 
 .settings-button-primary:hover {
-  background: #254bc5;
+  background: var(--brand-dark);
 }
 
 .language-options {
@@ -226,9 +226,9 @@
 }
 
 .language-option.is-selected {
-  border-color: #9eb2f5;
-  background: #f5f7ff;
-  color: #3153bd;
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
 .language-option-check {
@@ -313,7 +313,7 @@
 }
 
 .settings-toggle-row input:checked + .settings-switch {
-  background: #315bea;
+  background: var(--brand-primary);
 }
 
 .settings-toggle-row input:checked + .settings-switch::after {
@@ -321,7 +321,7 @@
 }
 
 .settings-toggle-row input:focus-visible + .settings-switch {
-  outline: 3px solid #87a4ff;
+  outline: 3px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
@@ -331,10 +331,10 @@
   gap: 8px;
   margin: 11px 0 0;
   padding: 10px;
-  border: 1px solid #e5ebfa;
+  border: 1px solid var(--border-neutral);
   border-radius: 7px;
-  background: #f7f9ff;
-  color: #62718d;
+  background: var(--brand-light);
+  color: #46536a;
   font-size: 9px;
   line-height: 1.5;
 }
@@ -346,8 +346,8 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: #e6edff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
   font-size: 9px;
   font-weight: 700;
 }
@@ -364,7 +364,7 @@
   height: 38px;
   place-items: center;
   border-radius: 10px;
-  background: #315bea;
+  background: var(--brand-primary);
   color: #fff;
   font-size: 15px;
   font-weight: 750;
@@ -438,7 +438,7 @@
 }
 
 .settings-link-list button:hover {
-  color: #3153bd;
+  color: var(--brand-primary);
 }
 
 .settings-link-list button > span:last-child {
@@ -564,7 +564,7 @@
 
 a:focus-visible,
 button:focus-visible {
-  outline: 3px solid #87a4ff;
+  outline: 3px solid var(--brand-primary);
   outline-offset: 2px;
 }
 

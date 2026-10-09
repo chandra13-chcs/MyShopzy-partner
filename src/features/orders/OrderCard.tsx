@@ -1,8 +1,11 @@
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { formatCustomerPhone, normalizeDemoOrder } from './orderState'
-import { demoRiderStatuses, type DemoOrder } from './types'
+import type { DemoOrder } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
-import { orderStatusTranslationKeys } from '../../i18n/translations'
+import {
+  orderStatusTranslationKeys,
+  riderStatusTranslationKeys,
+} from '../../i18n/translations'
 
 interface OrderCardProps {
   onOpen: (order: DemoOrder) => void
@@ -15,9 +18,21 @@ function nextAction(status: DemoOrder['status']) {
     case 'ACCEPTED':
       return { label: 'orders.startPreparing' as const, status: 'PREPARING' as const }
     case 'PREPARING':
-      return { label: 'orders.markReady' as const, status: 'READY' as const }
+      return { label: 'orders.markReady' as const, status: 'READY_FOR_PICKUP' as const }
+    case 'READY_FOR_PICKUP':
+      return { label: 'orders.completeOrder' as const, status: 'COMPLETED' as const }
     default:
       return undefined
+  }
+}
+
+function confirmComplete(
+  orderId: string,
+  onStatusChange: OrderCardProps['onStatusChange'],
+  t: ReturnType<typeof useLanguage>['t'],
+) {
+  if (window.confirm(t('orders.confirmComplete'))) {
+    onStatusChange(orderId, 'COMPLETED')
   }
 }
 
@@ -68,8 +83,12 @@ export function OrderCard({
           <span className="order-card-id">#{order.id}</span>
           <span className="order-card-status">
             <OrderStatusBadge status={order.status} />
-            {demoRiderStatuses.includes(order.status) && (
-              <small className="order-demo-label">{t('orders.riderDemoLabel')}</small>
+            {order.deliveryStatus && (
+              <small className="order-demo-label">
+                {t('orders.riderStatus', {
+                  status: t(riderStatusTranslationKeys[order.deliveryStatus]),
+                })}
+              </small>
             )}
           </span>
         </span>
@@ -193,7 +212,11 @@ export function OrderCard({
         <div className="order-card-actions order-card-actions-single">
           <button
             className="order-action-button order-action-progress"
-            onClick={() => onStatusChange(order.id, next.status)}
+            onClick={() =>
+              next.status === 'COMPLETED'
+                ? confirmComplete(order.id, onStatusChange, t)
+                : onStatusChange(order.id, next.status)
+            }
             type="button"
           >
             {t(next.label)}

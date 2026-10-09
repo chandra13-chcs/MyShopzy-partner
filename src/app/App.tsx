@@ -3,8 +3,12 @@ import { AppShell } from '../components/layout/AppShell'
 import OrdersWorkspace from '../features/orders/OrdersWorkspace'
 import { NewOrderAlertsProvider } from '../features/orders/NewOrderAlerts'
 import { initialOrders } from '../features/orders/orderDemoData'
-import { normalizeDemoOrders, transitionDemoOrder } from '../features/orders/orderState'
-import type { OrderStatus } from '../features/orders/types'
+import {
+  normalizeDemoOrders,
+  transitionDemoOrder,
+  transitionDemoOrderDelivery,
+} from '../features/orders/orderState'
+import type { OrderStatus, RiderStatus } from '../features/orders/types'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
 import ReportsWorkspace from '../features/reports/ReportsWorkspace'
 import SettingsWorkspace from '../features/settings/SettingsWorkspace'
@@ -55,6 +59,20 @@ function App() {
     )
   }
 
+  function updateOrderDeliveryStatus(orderId: string, status: RiderStatus) {
+    const timestamp = new Date().toLocaleTimeString('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+    setOrders((current) =>
+      normalizeDemoOrders(current).map((order) =>
+        order.id === orderId
+          ? transitionDemoOrderDelivery(order, status, timestamp) ?? order
+          : order,
+      ),
+    )
+  }
+
   let page
   if (route.path === '/') {
     page = (
@@ -68,7 +86,11 @@ function App() {
     )
   } else if (route.path === '/orders') {
     page = (
-      <OrdersWorkspace orders={safeOrders} onStatusChange={updateOrderStatus} />
+      <OrdersWorkspace
+        orders={safeOrders}
+        onDeliveryStatusChange={updateOrderDeliveryStatus}
+        onStatusChange={updateOrderStatus}
+      />
     )
   } else if (route.path === '/products') {
     page = <ProductsWorkspace />

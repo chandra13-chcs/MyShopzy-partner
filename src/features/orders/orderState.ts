@@ -6,18 +6,16 @@ import type {
   OrderTimelineEvent,
   PaymentMethod,
   PaymentStatus,
+  RiderStatus,
+  TrackedOrderStatus,
 } from './types'
 
 const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
   PENDING: ['ACCEPTED', 'REJECTED'],
   ACCEPTED: ['PREPARING'],
-  PREPARING: ['READY'],
-  READY: ['FINDING_RIDER'],
-  FINDING_RIDER: ['RIDER_ASSIGNED'],
-  RIDER_ASSIGNED: ['PICKED_UP'],
-  PICKED_UP: ['ON_THE_WAY'],
-  ON_THE_WAY: ['DELIVERED'],
-  DELIVERED: [],
+  PREPARING: ['READY_FOR_PICKUP'],
+  READY_FOR_PICKUP: ['COMPLETED'],
+  COMPLETED: [],
   REJECTED: [],
   UNKNOWN: [],
 }
@@ -26,15 +24,27 @@ const statuses = new Set<OrderStatus>([
   'PENDING',
   'ACCEPTED',
   'PREPARING',
-  'READY',
+  'READY_FOR_PICKUP',
+  'COMPLETED',
+  'REJECTED',
+  'UNKNOWN',
+])
+
+const riderStatuses = new Set<RiderStatus>([
   'FINDING_RIDER',
   'RIDER_ASSIGNED',
   'PICKED_UP',
   'ON_THE_WAY',
   'DELIVERED',
-  'REJECTED',
-  'UNKNOWN',
 ])
+
+const allowedRiderTransitions: Partial<Record<RiderStatus, RiderStatus[]>> = {
+  FINDING_RIDER: ['RIDER_ASSIGNED'],
+  RIDER_ASSIGNED: ['PICKED_UP'],
+  PICKED_UP: ['ON_THE_WAY'],
+  ON_THE_WAY: ['DELIVERED'],
+  DELIVERED: [],
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -48,11 +58,27 @@ function amount(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function isRiderStatus(value: unknown): value is RiderStatus {
+  return typeof value === 'string' && riderStatuses.has(value as RiderStatus)
+}
+
 function normalizeStatus(value: unknown): OrderStatus {
-  if (value === 'COMPLETED') return 'DELIVERED'
+  if (value === 'READY') return 'READY_FOR_PICKUP'
+  if (value === 'DELIVERED' || value === 'COMPLETED') return 'COMPLETED'
+  if (isRiderStatus(value)) return 'READY_FOR_PICKUP'
   return typeof value === 'string' && statuses.has(value as OrderStatus)
     ? (value as OrderStatus)
     : 'UNKNOWN'
+}
+
+function normalizeTrackedStatus(value: unknown): TrackedOrderStatus | undefined {
+  if (isRiderStatus(value)) return value
+  if (typeof value === 'string' && statuses.has(value as OrderStatus)) {
+    return value as OrderStatus
+  }
+  if (value === 'READY') return 'READY_FOR_PICKUP'
+  if (value === 'COMPLETED') return 'COMPLETED'
+  return undefined
 }
 
 function normalizeItem(value: unknown): OrderItem | undefined {
@@ -96,13 +122,18 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
   if (!isRecord(value) || typeof value.id !== 'string') return undefined
 
   const status = normalizeStatus(value.status)
+  const deliveryStatus = isRiderStatus(value.deliveryStatus)
+    ? value.deliveryStatus
+    : isRiderStatus(value.status)
+      ? value.status
+      : undefined
   const orderedAt = text(value.orderedAt)
   const statusHistory: OrderTimelineEvent[] = Array.isArray(value.statusHistory)
     ? value.statusHistory.flatMap((event): OrderTimelineEvent[] => {
         if (!isRecord(event)) return []
-        const eventStatus = normalizeStatus(event.status)
+        const eventStatus = normalizeTrackedStatus(event.status)
         const timestamp = text(event.timestamp)
-        if (eventStatus === 'UNKNOWN' || !timestamp) return []
+        if (!eventStatus || eventStatus === 'UNKNOWN' || !timestamp) return []
         return [{ status: eventStatus, timestamp }]
       })
     : []
@@ -136,6 +167,7 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
     statusHistory,
   }
 
+  if (deliveryStatus) order.deliveryStatus = deliveryStatus
   if (orderedAt) order.orderedAt = orderedAt
   if (paymentMethod) order.paymentMethod = paymentMethod
   if (paymentStatus) order.paymentStatus = paymentStatus
@@ -154,6 +186,11 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
   }
   if (rider) order.rider = rider
   if (typeof value.deliveredAt === 'string') order.deliveredAt = value.deliveredAt
+  if (typeof value.completedAt === 'string') {
+    order.completedAt = value.completedAt
+  } else if (value.status === 'DELIVERED' || value.status === 'COMPLETED') {
+    order.completedAt = order.deliveredAt
+  }
   if (typeof value.rejectionReason === 'string') {
     order.rejectionReason = value.rejectionReason
   }
@@ -205,7 +242,39 @@ export function transitionDemoOrder(
     statusHistory,
   }
 
-  if (requestedStatus === 'RIDER_ASSIGNED') {
+  if (requestedStatus === 'COMPLETED') nextOrder.completedAt = timestamp
+  return nextOrder
+}
+
+export function transitionDemoOrderDelivery(
+  value: unknown,
+  requestedStatus: RiderStatus,
+  timestamp: string,
+): DemoOrder | undefined {
+  const order = normalizeDemoOrder(value)
+  if (
+    !order ||
+    !riderStatuses.has(requestedStatus) ||
+    (order.status !== 'READY_FOR_PICKUP' && order.status !== 'COMPLETED')
+  ) {
+    return order
+  }
+
+  const currentDeliveryStatus = order.deliveryStatus
+  const allowed = currentDeliveryStatus
+    ? allowedRiderTransitions[currentDeliveryStatus]
+    : requestedStatus === 'FINDING_RIDER'
+      ? ['FINDING_RIDER']
+      : undefined
+  if (!allowed?.includes(requestedStatus)) return order
+
+  const statusHistory = [...order.statusHistory, { status: requestedStatus, timestamp }]
+  const nextOrder: DemoOrder = {
+    ...order,
+    deliveryStatus: requestedStatus,
+    statusHistory,
+  }
+  if (requestedStatus === 'RIDER_ASSIGNED' && !nextOrder.rider) {
     nextOrder.rider = {
       name: 'Ravi Kumar',
       id: 'RDR-1001',

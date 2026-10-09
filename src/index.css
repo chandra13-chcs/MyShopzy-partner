@@ -1,7 +1,14 @@
 :root {
+  --brand-primary: #00552f;
+  --brand-yellow: #ffd51e;
+  --brand-dark: #004225;
+  --brand-light: #f5f7f2;
+  --brand-primary-soft: rgb(0 85 47 / 8%);
+  --surface-white: #ffffff;
+  --border-neutral: #e7ebf2;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #172033;
-  background: #f5f7fb;
+  background: var(--brand-light);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -48,11 +55,11 @@ a {
   flex-direction: column;
   padding: 25px 16px 18px;
   border-right: 1px solid #e8ebf2;
-  background: #fff;
+  background: var(--surface-white);
 }
 
 .home-active-panel {
-  background: #f1f3f5;
+  background: var(--surface-white);
 }
 
 .brand,
@@ -143,14 +150,14 @@ a {
 
 .new-order-fallback-open {
   padding: 0 10px;
-  background: #315bea;
-  color: #2d3a51;
+  background: var(--brand-primary);
+  color: var(--surface-white);
   font-size: 10px;
   font-weight: 700;
 }
 
 .new-order-fallback-open:hover {
-  background: #254bc5;
+  background: var(--brand-dark);
 }
 
 .new-order-fallback-dismiss {
@@ -183,8 +190,8 @@ a {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: #eaf0ff;
-  color: #315bea;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
   font-size: 13px;
   font-weight: 700;
 }
@@ -237,13 +244,13 @@ a {
 }
 
 .nav-link:hover {
-  background: #f5f7fb;
+  background: var(--brand-primary-soft);
   color: #25334d;
 }
 
 .nav-link.is-active {
-  background: #edf2ff;
-  color: #234bc9;
+  background: rgb(0 85 47 / 8%);
+  color: var(--brand-primary);
   font-weight: 650;
 }
 
@@ -305,7 +312,7 @@ a {
   gap: 20px;
   padding: 0 36px;
   border-bottom: 1px solid #e8ebf2;
-  background: #fff;
+  background: var(--surface-white);
 }
 
 .mobile-brand {
@@ -385,7 +392,7 @@ a {
 }
 
 .home-active-panel {
-  background: #f1f3f5;
+  background: var(--surface-white);
 }
 
 .home-summary {
@@ -459,9 +466,9 @@ a {
   align-items: center;
   justify-content: center;
   padding: 0 15px;
-  border: 1px solid #315bea;
+  border: 1px solid var(--brand-primary);
   border-radius: 8px;
-  background: #315bea;
+  background: var(--brand-primary);
   color: #fff;
   font: inherit;
   font-size: 12px;
@@ -470,8 +477,8 @@ a {
 }
 
 .home-primary-action:hover {
-  border-color: #254bc5;
-  background: #254bc5;
+  border-color: var(--brand-dark);
+  background: var(--brand-dark);
 }
 
 .home-active-heading {
@@ -493,7 +500,7 @@ a {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #3153bd;
+  color: var(--brand-primary);
   font: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -501,7 +508,7 @@ a {
 }
 
 .home-view-all:hover {
-  background: #f2f5ff;
+  background: var(--brand-primary-soft);
 }
 
 .home-active-list {
@@ -561,7 +568,7 @@ a {
 
 .page-eyebrow {
   margin: 0 0 8px;
-  color: #315bea;
+  color: var(--brand-primary);
   font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.1em;
@@ -613,8 +620,8 @@ h1 {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 10px;
-  background: #dceaff;
-  color: #3153bd;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
   font-size: 12px;
   font-weight: 750;
 }
@@ -886,16 +893,16 @@ h1 {
   align-items: flex-start;
   gap: 10px;
   padding: 20px;
-  border: 1px solid #d0def2;
+  border: 1px solid var(--border-neutral);
   border-radius: 13px;
-  background: #e5efff;
+  background: var(--surface-white);
   text-decoration: none;
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
 .more-card:hover {
   transform: translateY(-2px);
-  border-color: #b7c9e7;
+  border-color: var(--brand-primary);
   box-shadow: 0 8px 22px rgb(32 52 95 / 8%);
 }
 
@@ -905,8 +912,8 @@ h1 {
   height: 48px;
   place-items: center;
   border-radius: 13px;
-  background: #d2e2fc;
-  color: #315bea;
+  background: rgb(0 85 47 / 8%);
+  color: var(--brand-primary);
 }
 
 .more-card-icon .nav-icon {
@@ -915,7 +922,7 @@ h1 {
 }
 
 .more-card > strong {
-  color: #2d3a51;
+  color: var(--brand-dark);
   font-size: 14px;
   font-weight: 700;
 }
@@ -931,40 +938,40 @@ h1 {
   position: absolute;
   top: 21px;
   right: 19px;
-  color: #748094;
+  color: var(--brand-primary);
   font-size: 17px;
 }
 
 .more-card[href="/store"] {
-  border-color: #c9e0ce;
-  background: #e3f0e6;
+  border-color: var(--border-neutral);
+  background: var(--surface-white);
 }
 
 .more-card[href="/store"] .more-card-icon {
-  background: #cde5d2;
-  color: #34744a;
+  background: rgb(0 85 47 / 8%);
+  color: var(--brand-primary);
 }
 
 .more-card[href="/store"]:hover {
-  border-color: #a8ceb1;
+  border-color: var(--brand-primary);
 }
 
 .more-card[href="/settings"] {
-  border-color: #dfd0be;
-  background: #f0e8dc;
+  border-color: var(--border-neutral);
+  background: var(--surface-white);
 }
 
 .more-card[href="/settings"] .more-card-icon {
-  background: #dfcfbb;
-  color: #80572e;
+  background: rgb(0 85 47 / 8%);
+  color: var(--brand-primary);
 }
 
 .more-card[href="/settings"]:hover {
-  border-color: #cfb99e;
+  border-color: var(--brand-primary);
 }
 a:focus-visible,
 button:focus-visible {
-  outline: 3px solid #87a4ff;
+  outline: 3px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
@@ -1002,6 +1009,9 @@ button:focus-visible {
     justify-content: space-between;
     gap: 10px;
     padding: 0 15px;
+    border-bottom-color: var(--brand-dark);
+    background: var(--brand-primary);
+    color: var(--surface-white);
   }
 
   .mobile-brand {
@@ -1014,6 +1024,10 @@ button:focus-visible {
     width: 30px;
     height: 30px;
     flex-basis: 30px;
+  }
+
+  .mobile-brand {
+    color: var(--surface-white);
   }
 
   .topbar-business {
@@ -1046,12 +1060,20 @@ button:focus-visible {
     min-height: 25px;
     padding: 0 8px;
     font-size: 9px;
+    border-color: rgb(255 255 255 / 45%);
+    color: var(--surface-white);
+  }
+
+  .status-pill .status-dot.is-open {
+    background: var(--brand-yellow);
   }
 
   .profile-button {
     width: 31px;
     height: 31px;
     font-size: 12px;
+    background: var(--brand-yellow);
+    color: var(--brand-dark);
   }
 
   .main-content {
@@ -1185,8 +1207,8 @@ button:focus-visible {
     display: grid;
     height: 65px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    border-top: 1px solid #253a54;
-    background: #0b1f3a;
+    border-top: 1px solid var(--brand-dark);
+    background: var(--brand-primary);
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -1199,7 +1221,7 @@ button:focus-visible {
     gap: 4px;
     border: 0;
     background: transparent;
-    color: #d4dce7;
+    color: var(--surface-white);
     font-size: 9px;
     font-weight: 550;
     text-decoration: none;
@@ -1212,7 +1234,7 @@ button:focus-visible {
   }
 
   .mobile-nav-link.is-active {
-    color: #79a8ff;
+    color: var(--brand-yellow);
     font-weight: 700;
   }
 
