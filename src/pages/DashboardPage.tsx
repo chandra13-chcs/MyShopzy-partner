@@ -1,75 +1,73 @@
-import type { BusinessType } from '../features/store/types'
-import { orderStatusLabels, type DemoOrder } from '../features/orders/types'
+import { OrderStatusBadge } from '../features/orders/OrderStatusBadge'
+import type { DemoOrder } from '../features/orders/types'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface DashboardPageProps {
   businessName: string
-  businessType: BusinessType
   orders: DemoOrder[]
   storeOpen: boolean
+  onNavigate: (path: string) => void
   onToggleStore: () => void
+}
+
+function isFromToday(order: DemoOrder) {
+  return order.orderedAt?.trim().toLocaleLowerCase().startsWith('today') ?? false
 }
 
 export default function DashboardPage({
   businessName,
-  businessType,
   orders,
   storeOpen,
+  onNavigate,
   onToggleStore,
 }: DashboardPageProps) {
-  const countStatus = (status: DemoOrder['status']) =>
-    orders.filter((order) => order.status === status).length
-  const outForDelivery = orders.filter(
-    (order) => order.status === 'PICKED_UP' || order.status === 'ON_THE_WAY',
-  ).length
-  const deliveredSales = orders
-    .filter((order) => order.status === 'DELIVERED')
-    .reduce((total, order) => total + order.total, 0)
-  const metrics = [
-    { label: 'New Orders', value: String(countStatus('PENDING')), note: 'Awaiting your response' },
-    { label: 'Preparing', value: String(countStatus('PREPARING')), note: 'In the kitchen' },
-    { label: 'Ready', value: String(countStatus('READY')), note: 'Waiting for a rider' },
-    { label: 'Out for Delivery', value: String(outForDelivery), note: 'With the delivery partner' },
-    { label: "Today's Completed", value: String(countStatus('DELIVERED')), note: `Sales ₹${deliveredSales.toLocaleString('en-IN')}` },
-  ]
+  const { language, t } = useLanguage()
+  const pendingCount = orders.filter((order) => order.status === 'PENDING').length
+  const todaysOrders = orders.filter(isFromToday)
+  const deliveredToday = todaysOrders.filter(
+    (order) => order.status === 'DELIVERED',
+  )
+  const hasAllSalesTotals = deliveredToday.every(
+    (order) => order.total !== undefined,
+  )
+  const todaysSales = deliveredToday.reduce(
+    (total, order) => total + (order.total ?? 0),
+    0,
+  )
+  const activeOrders = orders
+    .filter(
+      (order) =>
+        order.status !== 'DELIVERED' &&
+        order.status !== 'REJECTED' &&
+        order.status !== 'UNKNOWN',
+    )
+    .slice(0, 4)
+  const currencyLocale = language === 'te' ? 'te-IN' : 'en-IN'
 
   return (
-    <div className="dashboard">
+    <div className="dashboard-home">
       <div className="dashboard-heading">
         <div>
-          <p className="page-eyebrow">Overview</p>
-          <h1>Good day, {businessName}</h1>
-          <p className="page-description">
-            Here’s what’s happening with your business today.
-          </p>
+          <p className="page-eyebrow">{t('home.eyebrow')}</p>
+          <h1>{t('home.welcome', { name: businessName })}</h1>
+          <p className="page-description">{t('home.description')}</p>
         </div>
-        <span className="demo-tag demo-tag-large">DEMO DATA</span>
       </div>
-
-      <section className="business-summary" aria-label="Business details">
-        <div className="business-summary-icon" aria-hidden="true">
-          DB
-        </div>
-        <div className="business-summary-info">
-          <h2>{businessName}</h2>
-          <p>{businessType}</p>
-        </div>
-        <span className="business-type">{businessType}</span>
-      </section>
 
       <section
         className={`store-status-card${storeOpen ? ' store-is-open' : ' store-is-closed'}`}
-        aria-label="Store status"
+        aria-label={storeOpen ? t('home.storeOpen') : t('home.storeClosed')}
       >
         <div className="store-status-copy">
           <span className={`status-symbol${storeOpen ? ' is-open' : ''}`}>
             {storeOpen ? '✓' : '–'}
           </span>
           <div>
-            <h2>Store is {storeOpen ? 'Open' : 'Closed'}</h2>
+            <h2>{storeOpen ? t('home.storeOpen') : t('home.storeClosed')}</h2>
             <p>
               {storeOpen
-                ? 'Customers can currently place orders.'
-                : 'Your store is not accepting orders right now.'}
+                ? t('home.storeOpenDescription')
+                : t('home.storeClosedDescription')}
             </p>
           </div>
         </div>
@@ -79,42 +77,70 @@ export default function DashboardPage({
           onClick={onToggleStore}
           type="button"
         >
-          {storeOpen ? 'Close store' : 'Open store'}
+          {storeOpen ? t('home.closeStore') : t('home.openStore')}
         </button>
       </section>
 
-      <section className="metrics-grid" aria-label="Today's business summary">
-        {metrics.map((metric) => (
-          <article className="metric-card" key={metric.label}>
-            <p className="metric-label">{metric.label}</p>
-            <p className="metric-value">{metric.value}</p>
-            <p className="metric-note">{metric.note}</p>
+      <section className="home-summary" aria-labelledby="home-summary-title">
+        <h2 id="home-summary-title">{t('home.todaySummary')}</h2>
+        <div className="home-summary-grid">
+          <article className="home-summary-card">
+            <span>{t('home.todayOrders')}</span>
+            <strong>{todaysOrders.length}</strong>
           </article>
-        ))}
+          <article className="home-summary-card">
+            <span>{t('home.todaySales')}</span>
+            <strong>
+              {hasAllSalesTotals
+                ? `₹${todaysSales.toLocaleString(currencyLocale)}`
+                : t('home.unknownSales')}
+            </strong>
+          </article>
+        </div>
       </section>
 
-      <section className="orders-panel" aria-labelledby="orders-title">
-        <div className="panel-heading">
+      {pendingCount > 0 && (
+        <section className="home-pending-card" aria-label={t('home.pendingTitle')}>
           <div>
-            <h2 id="orders-title">Recent orders</h2>
-            <p>Recent demo orders and their current status.</p>
+            <h2>{t('home.pendingTitle')}</h2>
+            <p>{t('home.pendingDescription', { count: pendingCount })}</p>
           </div>
-          <span className="order-count">{orders.length} orders</span>
+          <button
+            className="home-primary-action"
+            onClick={() => onNavigate('/orders')}
+            type="button"
+          >
+            {t('home.viewOrders')}
+          </button>
+        </section>
+      )}
+
+      <section className="home-active-panel" aria-labelledby="home-active-title">
+        <div className="home-active-heading">
+          <h2 id="home-active-title">{t('home.activeOrders')}</h2>
+          <button
+            className="home-view-all"
+            onClick={() => onNavigate('/orders')}
+            type="button"
+          >
+            {t('home.viewAll')} <span aria-hidden="true">→</span>
+          </button>
         </div>
-        <div className="dashboard-order-list">
-          {orders.slice(0, 4).map((order) => (
-            <div className="dashboard-order-row" key={order.id}>
-              <span className="dashboard-order-id">#{order.id}</span>
-              <span className="dashboard-order-customer">{order.customerName}</span>
-              <span
-                className={`dashboard-order-status dashboard-status-${order.status.toLowerCase()}`}
-              >
-                {orderStatusLabels[order.status]}
-              </span>
-              <strong>₹{order.total.toLocaleString('en-IN')}</strong>
-            </div>
-          ))}
-        </div>
+        {activeOrders.length > 0 ? (
+          <ul className="home-active-list">
+            {activeOrders.map((order) => (
+              <li className="home-active-row" key={order.id}>
+                <span className="home-active-order">
+                  <strong>#{order.id}</strong>
+                  <span>{order.customerName}</span>
+                </span>
+                <OrderStatusBadge status={order.status} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="home-empty-active">{t('home.noActiveOrders')}</p>
+        )}
       </section>
     </div>
   )

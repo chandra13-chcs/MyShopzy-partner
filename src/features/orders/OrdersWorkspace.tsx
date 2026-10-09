@@ -4,18 +4,24 @@ import { OrderList } from './OrderList'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { normalizeDemoOrders } from './orderState'
 import type { DemoOrder, OrderStatus } from './types'
+import { useLanguage } from '../../i18n/LanguageContext'
+import type { TranslationKey } from '../../i18n/translations'
 import './orders.css'
 
-type OrderFilter = 'ALL' | 'PENDING' | 'PREPARING' | 'READY' | 'ON_THE_WAY' | 'DELIVERED' | 'REJECTED'
+type OrderFilter = 'ALL' | OrderStatus
 
-const filters: { label: string; value: OrderFilter }[] = [
-  { label: 'All', value: 'ALL' },
-  { label: 'New', value: 'PENDING' },
-  { label: 'Preparing', value: 'PREPARING' },
-  { label: 'Ready', value: 'READY' },
-  { label: 'On The Way', value: 'ON_THE_WAY' },
-  { label: 'Delivered', value: 'DELIVERED' },
-  { label: 'Rejected', value: 'REJECTED' },
+const filters: { label: TranslationKey; value: OrderFilter }[] = [
+  { label: 'orders.all', value: 'ALL' },
+  { label: 'orders.new', value: 'PENDING' },
+  { label: 'orders.accepted', value: 'ACCEPTED' },
+  { label: 'orders.preparing', value: 'PREPARING' },
+  { label: 'orders.ready', value: 'READY' },
+  { label: 'orders.findingRider', value: 'FINDING_RIDER' },
+  { label: 'orders.riderAssigned', value: 'RIDER_ASSIGNED' },
+  { label: 'orders.pickedUp', value: 'PICKED_UP' },
+  { label: 'orders.onTheWay', value: 'ON_THE_WAY' },
+  { label: 'orders.delivered', value: 'DELIVERED' },
+  { label: 'orders.rejected', value: 'REJECTED' },
 ]
 
 const historyStatuses: OrderStatus[] = ['DELIVERED', 'REJECTED']
@@ -29,6 +35,7 @@ export default function OrdersWorkspace({
   onStatusChange,
   orders,
 }: OrdersWorkspaceProps) {
+  const { t } = useLanguage()
   const [filter, setFilter] = useState<OrderFilter>('ALL')
   const [search, setSearch] = useState('')
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
@@ -42,7 +49,10 @@ export default function OrdersWorkspace({
       const matchesSearch =
         !query ||
         order.id.toLocaleLowerCase().includes(query) ||
-        order.customerName.toLocaleLowerCase().includes(query)
+        order.customerName.toLocaleLowerCase().includes(query) ||
+        order.items.some((item) =>
+          item.productName.toLocaleLowerCase().includes(query),
+        )
       return matchesFilter && matchesSearch
     })
   }, [filter, safeOrders, search])
@@ -53,52 +63,67 @@ export default function OrdersWorkspace({
   const historyOrders = visibleOrders.filter(
     (order) => historyStatuses.includes(order.status),
   )
-  const showActive =
-    filter === 'ALL' || !historyStatuses.includes(filter as OrderStatus)
-  const showHistory =
-    filter === 'ALL' || historyStatuses.includes(filter as OrderStatus)
+  const showActive = filter === 'ALL' || !historyStatuses.includes(filter)
+  const showHistory = filter === 'ALL' || historyStatuses.includes(filter)
   const selectedOrder = safeOrders.find((order) => order.id === selectedOrderId)
 
   return (
     <div className="orders-workspace">
       <div className="orders-page-heading">
         <div>
-          <p className="page-eyebrow">Order management</p>
-          <h1>Orders</h1>
-          <p className="page-description">
-            Review new orders, prepare them, and monitor delivery progress.
-          </p>
+          <p className="page-eyebrow">{t('orders.eyebrow')}</p>
+          <h1>{t('orders.title')}</h1>
+          <p className="page-description">{t('orders.description')}</p>
         </div>
-        <span className="demo-tag demo-tag-large">LOCAL DEMO</span>
+        <span className="demo-tag demo-tag-large">{t('orders.localDemo')}</span>
       </div>
 
       {newOrderCount > 0 && (
-        <section className="pending-summary" aria-label="New orders">
+        <section
+          className="pending-summary"
+          aria-label={t('orders.newOrdersRegion')}
+        >
           <span className="pending-summary-icon" aria-hidden="true">!</span>
           <div>
-            <strong>{newOrderCount} new {newOrderCount === 1 ? 'order' : 'orders'} need your attention</strong>
-            <p>New orders stay here until you accept or reject them.</p>
+            <strong>
+              {t(
+                newOrderCount === 1
+                  ? 'orders.newAttentionOne'
+                  : 'orders.newAttentionMany',
+                { count: newOrderCount },
+              )}
+            </strong>
+            <p>{t('orders.pendingDescription')}</p>
           </div>
-          <span className="pending-summary-tag">NEW ORDER</span>
+          <span className="pending-summary-tag">{t('orders.newOrder')}</span>
         </section>
       )}
 
-      <section className="orders-panel" aria-label="Orders workspace">
+      <section
+        className="orders-panel"
+        aria-label={t('orders.workspaceRegion')}
+      >
         <div className="orders-toolbar">
           <label className="orders-search">
             <span aria-hidden="true" className="orders-search-icon">⌕</span>
-            <span className="orders-visually-hidden">Search by order ID or customer</span>
+            <span className="orders-visually-hidden">
+              {t('orders.searchLabel')}
+            </span>
             <input
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search order ID or customer"
+              placeholder={t('orders.search')}
               type="search"
               value={search}
             />
           </label>
-          <span className="orders-demo-note">Demo orders · local only</span>
+          <span className="orders-demo-note">{t('orders.localDemo')}</span>
         </div>
 
-        <div aria-label="Filter orders by status" className="orders-filters" role="tablist">
+        <div
+          aria-label={t('orders.filterByStatus')}
+          className="orders-filters"
+          role="tablist"
+        >
           {filters.map((item) => {
             const count =
               item.value === 'ALL'
@@ -113,7 +138,7 @@ export default function OrdersWorkspace({
                 role="tab"
                 type="button"
               >
-                {item.label} <span>{count}</span>
+                {t(item.label)} <span>{count}</span>
               </button>
             )
           })}
@@ -121,8 +146,19 @@ export default function OrdersWorkspace({
 
         <div className="orders-list-heading">
           <div>
-            <h2>{filter === 'ALL' ? 'Orders' : `${filters.find((item) => item.value === filter)?.label} orders`}</h2>
-            <p>{visibleOrders.length} {visibleOrders.length === 1 ? 'order' : 'orders'} shown</p>
+            <h2>
+              {filter === 'ALL'
+                ? t('orders.title')
+                : `${t(filters.find((item) => item.value === filter)?.label ?? 'orders.title')} · ${t('orders.title')}`}
+            </h2>
+            <p>
+              {t(
+                visibleOrders.length === 1
+                  ? 'orders.orderCountOne'
+                  : 'orders.orderCountMany',
+                { count: visibleOrders.length },
+              )}
+            </p>
           </div>
           {filter !== 'ALL' && filter !== 'PENDING' && (
             <OrderStatusBadge status={filter} />
@@ -132,8 +168,8 @@ export default function OrdersWorkspace({
         {visibleOrders.length === 0 ? (
           <div className="orders-empty-state">
             <span aria-hidden="true">⌕</span>
-            <h2>No orders found</h2>
-            <p>Try changing the status filter or search term.</p>
+            <h2>{t('orders.noOrders')}</h2>
+            <p>{t('orders.noOrdersDescription')}</p>
           </div>
         ) : (
           <div className="orders-groups">
@@ -142,7 +178,7 @@ export default function OrdersWorkspace({
                 onOpen={(order) => setSelectedOrderId(order.id)}
                 onStatusChange={onStatusChange}
                 orders={activeOrders}
-                title="Active orders"
+                title={t('orders.activeGroup')}
               />
             )}
             {showHistory && (
@@ -150,7 +186,7 @@ export default function OrdersWorkspace({
                 onOpen={(order) => setSelectedOrderId(order.id)}
                 onStatusChange={onStatusChange}
                 orders={historyOrders}
-                title="Order history"
+                title={t('orders.historyGroup')}
               />
             )}
           </div>

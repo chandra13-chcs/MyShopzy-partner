@@ -4,10 +4,12 @@ import { AppInformation } from './AppInformation'
 import { BusinessPreferences } from './BusinessPreferences'
 import { DemoAccountSection } from './DemoAccountSection'
 import { LegalSection } from './LegalSection'
+import { LanguagePreference } from './LanguagePreference'
 import { NotificationPreferences } from './NotificationPreferences'
 import { initialNotificationPreferences } from './settingsDemoData'
 import { SettingsDialog } from './SettingsDialog'
 import type { NotificationPreferences as Preferences, SettingsDialogType } from './types'
+import { useLanguage } from '../../i18n/LanguageContext'
 import './settings.css'
 
 interface SettingsWorkspaceProps {
@@ -38,6 +40,7 @@ export default function SettingsWorkspace({
   profile,
   storeOpen,
 }: SettingsWorkspaceProps) {
+  const { t } = useLanguage()
   const [preferences, setPreferences] = useState<Preferences>(() => ({
     ...initialNotificationPreferences,
   }))
@@ -53,16 +56,17 @@ export default function SettingsWorkspace({
     <div className="settings-workspace">
       <div className="settings-page-heading">
         <div>
-          <p className="page-eyebrow">Workspace preferences</p>
-          <h1>Settings</h1>
+          <p className="page-eyebrow">{t('settings.eyebrow')}</p>
+          <h1>{t('settings.title')}</h1>
           <p className="page-description">
-            Manage business preferences and partner console information.
+            {t('settings.description')}
           </p>
         </div>
         <span className="demo-tag demo-tag-large">LOCAL DEMO</span>
       </div>
 
       <div className="settings-grid">
+        <LanguagePreference />
         <BusinessPreferences
           onToggleStore={onToggleStore}
           operatingHours={operatingHours}

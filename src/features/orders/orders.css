@@ -338,7 +338,7 @@
   font-size: 15px;
 }
 
-.new-order-items {
+.order-card-item-list {
   display: grid;
   gap: 10px;
   padding: 10px 0;
@@ -346,47 +346,55 @@
   border-bottom: 1px solid #f1e7d4;
 }
 
-.new-order-item {
+.order-card-item {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
-.new-order-item > span {
+.order-card-item > span {
   display: grid;
   min-width: 0;
   gap: 3px;
 }
 
-.new-order-item strong {
+.order-card-item strong {
   color: #37445a;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.4;
 }
 
-.new-order-item small {
+.order-card-item small {
   color: #7c8797;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.45;
 }
 
-.new-order-item > strong {
+.order-card-item > strong {
   flex: 0 0 auto;
 }
 
-.new-order-payment {
+.order-card-payment {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   color: #69758a;
-  font-size: 9px;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
-.new-order-payment strong {
+.order-card-payment strong {
+  flex: 0 0 auto;
   color: #29364c;
+  font-size: 11px;
+}
+
+.order-card-instructions {
+  color: #69758a;
   font-size: 10px;
+  line-height: 1.5;
 }
 
 .order-card-address {
@@ -436,8 +444,22 @@
   font-size: 8px;
 }
 
-.order-card-topline .order-status-badge {
+.order-card-status {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
   margin-left: auto;
+}
+
+.order-demo-label {
+  padding: 4px 5px;
+  border-radius: 5px;
+  background: #fff3df;
+  color: #89600f;
+  font-size: 8px;
+  font-weight: 750;
+  white-space: nowrap;
 }
 
 .order-card-primary {
@@ -458,15 +480,6 @@
   color: #243149;
   font-size: 14px;
   font-weight: 750;
-}
-
-.order-card-items {
-  overflow: hidden;
-  color: #647087;
-  font-size: 10px;
-  line-height: 1.5;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .order-card-meta {
@@ -936,6 +949,33 @@
   font-size: 9px;
 }
 
+.order-timeline-owner {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #edf2ff;
+  color: #3153bd;
+  font-size: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.order-timeline-owner.is-demo {
+  background: #fff3df;
+  color: #89600f;
+}
+
+.order-rider-demo-note {
+  margin: 0 0 12px;
+  padding: 9px 10px;
+  border: 1px solid #f0dfb7;
+  border-radius: 7px;
+  background: #fff9eb;
+  color: #725316;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .order-delivered-at {
   margin: 2px 0 0 28px;
   color: #237246;
@@ -1064,62 +1104,8 @@
   white-space: nowrap;
 }
 
-.dashboard-order-status {
+.dashboard-order-row .order-status-badge {
   justify-self: start;
-  padding: 4px 7px;
-  border-radius: 15px;
-  font-size: 9px;
-  font-weight: 650;
-}
-
-.dashboard-status-pending {
-  background: #fff2d7;
-  color: #8a5b0b;
-}
-
-.dashboard-status-accepted {
-  background: #edf2ff;
-  color: #3153bd;
-}
-
-.dashboard-status-preparing {
-  background: #f0eaff;
-  color: #6746a2;
-}
-
-.dashboard-status-ready {
-  background: #e5f5f4;
-  color: #26736d;
-}
-
-.dashboard-status-finding_rider {
-  background: #fff3df;
-  color: #89600f;
-}
-
-.dashboard-status-rider_assigned {
-  background: #edf2ff;
-  color: #3153bd;
-}
-
-.dashboard-status-picked_up {
-  background: #e5f5f4;
-  color: #26736d;
-}
-
-.dashboard-status-on_the_way {
-  background: #e9f3ff;
-  color: #27629a;
-}
-
-.dashboard-status-delivered {
-  background: #eaf7ef;
-  color: #237246;
-}
-
-.dashboard-status-rejected {
-  background: #fceaea;
-  color: #a33b3b;
 }
 
 .dashboard-order-row strong {
@@ -1319,7 +1305,4 @@
     display: none;
   }
 
-  .dashboard-order-status {
-    font-size: 8px;
-  }
 }

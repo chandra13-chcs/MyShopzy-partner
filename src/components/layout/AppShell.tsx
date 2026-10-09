@@ -1,5 +1,8 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { routes } from '../../app/routes'
+import { useLanguage } from '../../i18n/LanguageContext'
+import type { TranslationKey } from '../../i18n/translations'
+import { useNewOrderAlerts } from '../../features/orders/NewOrderAlertsContext'
 
 interface AppShellProps {
   activePath: string
@@ -9,16 +12,21 @@ interface AppShellProps {
   storeOpen: boolean
 }
 
-const mobileRoutes = [
-  routes[0],
-  routes[1],
-  routes[2],
-  routes[3],
-  routes[4],
-  routes[5],
-]
+const mobileRoutes = routes.filter((route) =>
+  ['/', '/orders', '/products', '/more'].includes(route.path),
+)
 
-function NavigationIcon({ path }: { path: string }) {
+const routeTranslationKeys: Record<string, TranslationKey> = {
+  '/': 'nav.home',
+  '/orders': 'nav.orders',
+  '/products': 'nav.products',
+  '/store': 'nav.store',
+  '/reports': 'nav.reports',
+  '/settings': 'nav.settings',
+  '/more': 'nav.more',
+}
+
+export function NavigationIcon({ path }: { path: string }) {
   const iconPaths: Record<string, ReactNode> = {
     '/': <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
     '/orders': (
@@ -50,6 +58,14 @@ function NavigationIcon({ path }: { path: string }) {
         <path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V4a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2.9Z" />
       </>
     ),
+    '/more': (
+      <>
+        <rect x="4" y="4" width="6" height="6" rx="1" />
+        <rect x="14" y="4" width="6" height="6" rx="1" />
+        <rect x="4" y="14" width="6" height="6" rx="1" />
+        <rect x="14" y="14" width="6" height="6" rx="1" />
+      </>
+    ),
   }
 
   return (
@@ -75,30 +91,33 @@ export function AppShell({
   onNavigate,
   storeOpen,
 }: AppShellProps) {
-  const [moreOpen, setMoreOpen] = useState(false)
-  const storeStatus = storeOpen ? 'OPEN' : 'CLOSED'
-  const moreActive = mobileRoutes.slice(3).some((item) => item.path === activePath)
+  const { t } = useLanguage()
+  const { alerts, dismissAlert } = useNewOrderAlerts()
+  const moreActive = ['/more', '/store', '/reports', '/settings'].includes(activePath)
 
   function handleNavigation(
     event: React.MouseEvent<HTMLAnchorElement>,
     path: string,
   ) {
     event.preventDefault()
-    setMoreOpen(false)
     onNavigate(path)
   }
 
   return (
     <div className="app-shell">
-      <aside className="sidebar" aria-label="Main navigation">
+      <aside className="sidebar" aria-label={t('nav.mainNavigation')}>
         <a
           className="brand"
           href="/"
           onClick={(event) => handleNavigation(event, '/')}
         >
-          <span className="brand-mark" aria-hidden="true">
-            M
-          </span>
+          <img
+            alt=""
+            className="brand-logo"
+            height="34"
+            src="/images/myshopzy-logo.png"
+            width="34"
+          />
           <span>MyShopzy Partner</span>
         </a>
         <div className="sidebar-business">
@@ -107,12 +126,12 @@ export function AppShell({
           </span>
           <span className="business-copy">
             <strong>{businessName}</strong>
-            <span>Partner account</span>
+            <span>{t('app.partnerAccount')}</span>
           </span>
         </div>
-        <p className="nav-heading">WORKSPACE</p>
+        <p className="nav-heading">{t('nav.workspace')}</p>
         <nav className="side-nav">
-          {routes.slice(0, 6).map((item) => (
+          {routes.filter((item) => item.path !== '/login').map((item) => (
             <a
               key={item.path}
               aria-current={activePath === item.path ? 'page' : undefined}
@@ -121,40 +140,86 @@ export function AppShell({
               onClick={(event) => handleNavigation(event, item.path)}
             >
               <NavigationIcon path={item.path} />
-              <span>{item.label}</span>
+              <span>{t(routeTranslationKeys[item.path])}</span>
             </a>
           ))}
         </nav>
         <div className="sidebar-footer">
           <span className={`status-dot${storeOpen ? ' is-open' : ''}`} />
-          <span>Store {storeStatus.toLowerCase()}</span>
+          <span>
+            {storeOpen
+              ? t('app.storeOpenStatus')
+              : t('app.storeClosedStatus')}
+          </span>
           <span className="demo-tag">DEMO</span>
         </div>
       </aside>
 
       <div className="workspace">
+        {alerts.map((alert) => (
+          <section
+            aria-live="polite"
+            className="new-order-fallback-alert"
+            key={alert.orderId}
+            role="status"
+          >
+            <span className="new-order-fallback-icon" aria-hidden="true">!</span>
+            <div className="new-order-fallback-copy">
+              <strong>
+                {alert.reason === 'blocked'
+                  ? t('alert.soundBlocked', { id: alert.orderId })
+                  : alert.reason === 'disabled'
+                    ? t('alert.soundDisabled', { id: alert.orderId })
+                    : t('alert.soundUnavailable', { id: alert.orderId })}
+              </strong>
+              <span>{t('alert.checkOrders')}</span>
+            </div>
+            <button
+              className="new-order-fallback-open"
+              onClick={() => {
+                dismissAlert(alert.orderId)
+                onNavigate('/orders')
+              }}
+              type="button"
+            >
+              {t('alert.review')}
+            </button>
+            <button
+              aria-label={t('alert.dismiss', { id: alert.orderId })}
+              className="new-order-fallback-dismiss"
+              onClick={() => dismissAlert(alert.orderId)}
+              type="button"
+            >
+              ×
+            </button>
+          </section>
+        ))}
         <header className="topbar">
           <a
             className="mobile-brand"
             href="/"
             onClick={(event) => handleNavigation(event, '/')}
           >
-            <span className="brand-mark" aria-hidden="true">
-              M
-            </span>
+            <img
+              alt=""
+              className="brand-logo"
+              height="32"
+              src="/images/myshopzy-logo.png"
+              width="32"
+            />
             <span>MyShopzy Partner</span>
           </a>
           <div className="topbar-business">
             <span className="business-name">{businessName}</span>
             <span className="status-pill">
               <span className={`status-dot${storeOpen ? ' is-open' : ''}`} />
-              {storeStatus}
+              {storeOpen ? t('app.open') : t('app.closed')}
             </span>
           </div>
           <button
-            aria-label="Profile menu placeholder"
+            aria-label={t('app.profileMenu')}
             className="profile-button"
-            title="Profile menu coming soon"
+            title={t('app.profileMenu')}
             type="button"
           >
             <span aria-hidden="true">{businessName.slice(0, 1).toUpperCase()}</span>
@@ -164,47 +229,25 @@ export function AppShell({
         <main className="main-content">{children}</main>
       </div>
 
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        {mobileRoutes.slice(0, 3).map((item) => (
+      <nav className="mobile-nav" aria-label={t('nav.mobileNavigation')}>
+        {mobileRoutes.map((item) => (
           <a
             key={item.path}
-            aria-current={activePath === item.path ? 'page' : undefined}
-            className={`mobile-nav-link${activePath === item.path ? ' is-active' : ''}`}
+            aria-current={
+              activePath === item.path ||
+              (item.path === '/more' && moreActive)
+                ? 'page'
+                : undefined
+            }
+            className={`mobile-nav-link${activePath === item.path || (item.path === '/more' && moreActive) ? ' is-active' : ''}`}
             href={item.path}
             onClick={(event) => handleNavigation(event, item.path)}
           >
             <NavigationIcon path={item.path} />
-            <span>{item.label}</span>
+            <span>{t(routeTranslationKeys[item.path])}</span>
           </a>
         ))}
-        <button
-          aria-expanded={moreOpen}
-          aria-current={moreActive ? 'page' : undefined}
-          className={`mobile-nav-link${moreOpen || moreActive ? ' is-active' : ''}`}
-          onClick={() => setMoreOpen((isOpen) => !isOpen)}
-          type="button"
-        >
-          <NavigationIcon path="/settings" />
-          <span>More</span>
-        </button>
       </nav>
-
-      {moreOpen && (
-        <nav className="mobile-more-menu" aria-label="More navigation">
-          {mobileRoutes.slice(3).map((item) => (
-            <a
-              key={item.path}
-              aria-current={activePath === item.path ? 'page' : undefined}
-              className={`nav-link${activePath === item.path ? ' is-active' : ''}`}
-              href={item.path}
-              onClick={(event) => handleNavigation(event, item.path)}
-            >
-              <NavigationIcon path={item.path} />
-              <span>{item.label === 'More / Settings' ? 'Settings' : item.label}</span>
-            </a>
-          ))}
-        </nav>
-      )}
     </div>
   )
 }

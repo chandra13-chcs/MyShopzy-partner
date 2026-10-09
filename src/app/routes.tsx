@@ -10,7 +10,8 @@ export const routes: AppRoute[] = [
   { path: '/products', label: 'Products', title: 'Products' },
   { path: '/store', label: 'Store', title: 'Store' },
   { path: '/reports', label: 'Reports', title: 'Reports' },
-  { path: '/settings', label: 'More / Settings', title: 'Settings' },
+  { path: '/settings', label: 'Settings', title: 'Settings' },
+  { path: '/more', label: 'More', title: 'More' },
   { path: '/login', label: 'Login', title: 'Partner sign in' },
 ]
 

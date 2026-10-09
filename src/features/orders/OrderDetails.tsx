@@ -1,7 +1,13 @@
 import { useEffect } from 'react'
 import { OrderStatusBadge } from './OrderStatusBadge'
-import { normalizeDemoOrder } from './orderState'
-import { orderStatusLabels, type DemoOrder, type OrderStatus } from './types'
+import { formatCustomerPhone, normalizeDemoOrder } from './orderState'
+import {
+  demoRiderStatuses,
+  type DemoOrder,
+  type OrderStatus,
+} from './types'
+import { useLanguage } from '../../i18n/LanguageContext'
+import { orderStatusTranslationKeys } from '../../i18n/translations'
 
 interface OrderDetailsProps {
   onClose: () => void
@@ -24,11 +30,11 @@ const deliverySteps: OrderStatus[] = [
 function partnerAction(status: OrderStatus) {
   switch (status) {
     case 'PENDING':
-      return { label: 'Accept Order', status: 'ACCEPTED' as const }
+      return { label: 'orders.accept' as const, status: 'ACCEPTED' as const }
     case 'ACCEPTED':
-      return { label: 'Start Preparing', status: 'PREPARING' as const }
+      return { label: 'orders.startPreparing' as const, status: 'PREPARING' as const }
     case 'PREPARING':
-      return { label: 'Mark Order Ready', status: 'READY' as const }
+      return { label: 'orders.markReady' as const, status: 'READY' as const }
     default:
       return undefined
   }
@@ -37,15 +43,15 @@ function partnerAction(status: OrderStatus) {
 function demoAction(status: OrderStatus) {
   switch (status) {
     case 'READY':
-      return { label: 'Demo: Simulate Rider Assignment', status: 'FINDING_RIDER' as const }
+      return { label: 'orders.simulateAssignment' as const, status: 'FINDING_RIDER' as const }
     case 'FINDING_RIDER':
-      return { label: 'Demo: Simulate Rider Assignment', status: 'RIDER_ASSIGNED' as const }
+      return { label: 'orders.simulateAssignment' as const, status: 'RIDER_ASSIGNED' as const }
     case 'RIDER_ASSIGNED':
-      return { label: 'Demo: Simulate Rider Pickup', status: 'PICKED_UP' as const }
+      return { label: 'orders.simulatePickup' as const, status: 'PICKED_UP' as const }
     case 'PICKED_UP':
-      return { label: 'Demo: Simulate On The Way', status: 'ON_THE_WAY' as const }
+      return { label: 'orders.simulateOnTheWay' as const, status: 'ON_THE_WAY' as const }
     case 'ON_THE_WAY':
-      return { label: 'Demo: Simulate Delivery', status: 'DELIVERED' as const }
+      return { label: 'orders.simulateDelivery' as const, status: 'DELIVERED' as const }
     default:
       return undefined
   }
@@ -60,6 +66,7 @@ export function OrderDetails({
   onStatusChange,
   order: rawOrder,
 }: OrderDetailsProps) {
+  const { t } = useLanguage()
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -79,10 +86,10 @@ export function OrderDetails({
           onMouseDown={(event) => event.stopPropagation()}
           role="dialog"
         >
-          <h2 id="order-details-unavailable-title">Order details unavailable</h2>
-          <p>This order data could not be displayed safely.</p>
+          <h2 id="order-details-unavailable-title">{t('orders.detailsUnavailable')}</h2>
+          <p>{t('orders.unavailableDescription')}</p>
           <button className="order-action-button order-action-progress" onClick={onClose} type="button">
-            Close
+            {t('orders.close')}
           </button>
         </section>
       </div>
@@ -110,11 +117,16 @@ export function OrderDetails({
       >
         <header className="order-details-header">
           <div>
-            <span className="orders-eyebrow">Order details · Placed {order.orderedAt}</span>
+            <span className="orders-eyebrow">
+              {t('orders.details')}
+              {order.orderedAt
+                ? ` · ${t('orders.placed', { time: order.orderedAt })}`
+                : ''}
+            </span>
             <h2 id="order-details-title">#{order.id}</h2>
           </div>
           <button
-            aria-label="Close order details"
+            aria-label={t('orders.closeDetails')}
             className="order-details-close"
             onClick={onClose}
             type="button"
@@ -126,99 +138,177 @@ export function OrderDetails({
         <div className="order-details-content">
           <div className="order-details-status-line">
             <OrderStatusBadge status={order.status} />
-            <span>{order.orderedAt}</span>
+            {order.orderedAt && <span>{order.orderedAt}</span>}
           </div>
 
           {order.status === 'PENDING' && (
             <div className="order-details-new-banner">
-              <strong>NEW ORDER</strong>
-              <span>Please review all items and respond to this order.</span>
+              <strong>{t('orders.newBadge')}</strong>
+              <span>{t('orders.pendingDescription')}</span>
             </div>
           )}
 
           <section className="order-detail-section">
-            <h3>Customer</h3>
+            <h3>{t('orders.customer')}</h3>
             <dl className="order-detail-grid">
-              <div><dt>Name</dt><dd>{order.customerName}</dd></div>
-              <div><dt>Phone</dt><dd>{order.customerPhone}</dd></div>
-            </dl>
-          </section>
-
-          <section className="order-detail-section">
-            <h3>Delivery</h3>
-            <dl className="order-detail-grid">
-              <div className="order-detail-full">
-                <dt>Delivery address</dt>
-                <dd>{order.address}, {order.area}, {order.city}</dd>
-              </div>
-              {order.deliveryInstructions && (
-                <div className="order-detail-full">
-                  <dt>Delivery instructions</dt>
-                  <dd>{order.deliveryInstructions}</dd>
-                </div>
+              <div><dt>{t('orders.name')}</dt><dd>{order.customerName}</dd></div>
+              {order.customerPhone && (
+                <div><dt>{t('orders.phoneMasked')}</dt><dd>{formatCustomerPhone(order.customerPhone)}</dd></div>
               )}
             </dl>
           </section>
 
-          <section className="order-detail-section">
-            <h3>Items ({order.items.reduce((count, item) => count + item.quantity, 0)})</h3>
-            <div className="order-detail-items">
-              {order.items.map((item, index) => (
-                <div className="order-detail-item" key={`${item.productName}-${index}`}>
-                  <div>
-                    <strong>{item.productName}</strong>
-                    <span>Qty {item.quantity} · {formatPrice(item.unitPrice)} each</span>
-                    {item.variant && <small>Variant: {item.variant}</small>}
-                    {item.addOns?.map((addOn) => <small key={addOn}>Add-on: {addOn}</small>)}
-                    {item.customizations?.map((customization) => (
-                      <small key={customization}>{customization}</small>
-                    ))}
-                    {item.specialInstructions && (
-                      <small>Item instructions: {item.specialInstructions}</small>
-                    )}
+          {(order.address || order.area || order.city || order.deliveryInstructions) && (
+            <section className="order-detail-section">
+              <h3>{t('orders.delivery')}</h3>
+              <dl className="order-detail-grid">
+                {(order.address || order.area || order.city) && (
+                  <div className="order-detail-full">
+                    <dt>{t('orders.deliveryAddress')}</dt>
+                    <dd>{[order.address, order.area, order.city].filter(Boolean).join(', ')}</dd>
                   </div>
-                  <strong>{formatPrice(item.quantity * item.unitPrice)}</strong>
-                </div>
-              ))}
+                )}
+                {order.deliveryInstructions && (
+                  <div className="order-detail-full">
+                    <dt>{t('orders.deliveryInstructions')}</dt>
+                    <dd>{order.deliveryInstructions}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
+
+          <section className="order-detail-section">
+            <h3>
+              {t('orders.items')}
+              {order.items.every((item) => item.quantity !== undefined) &&
+                ` (${order.items.reduce((count, item) => count + (item.quantity ?? 0), 0)})`}
+            </h3>
+            <div className="order-detail-items">
+              {order.items.map((item, index) => {
+                const lineTotal =
+                  item.quantity !== undefined && item.unitPrice !== undefined
+                    ? item.quantity * item.unitPrice
+                    : undefined
+                return (
+                  <div className="order-detail-item" key={`${item.productName}-${index}`}>
+                    <div>
+                      <strong>{item.productName}</strong>
+                      <span>
+                        {item.quantity !== undefined &&
+                          t('orders.quantity', { count: item.quantity })}
+                        {item.quantity !== undefined && item.unitPrice !== undefined && ' · '}
+                        {item.unitPrice !== undefined &&
+                          t('orders.eachValue', {
+                            amount: item.unitPrice.toLocaleString('en-IN'),
+                          })}
+                      </span>
+                      {item.variant && (
+                        <small>{t('orders.variant', { value: item.variant })}</small>
+                      )}
+                      {item.addOns?.map((addOn, addOnIndex) => (
+                        <small key={`${addOn}-${addOnIndex}`}>
+                          {t('orders.addOn', { value: addOn })}
+                        </small>
+                      ))}
+                      {item.customizations?.map((customization, customizationIndex) => (
+                        <small key={`${customization}-${customizationIndex}`}>
+                          {t('orders.customization', { value: customization })}
+                        </small>
+                      ))}
+                      {item.specialInstructions && (
+                        <small>
+                          {t('orders.itemInstructions', {
+                            value: item.specialInstructions,
+                          })}
+                        </small>
+                      )}
+                    </div>
+                    {lineTotal !== undefined && <strong>{formatPrice(lineTotal)}</strong>}
+                  </div>
+                )
+              })}
+              {order.items.length === 0 && <p>{t('orders.noItemDetails')}</p>}
             </div>
           </section>
 
-          <section className="order-detail-section">
-            <h3>Payment</h3>
-            <dl className="order-payment-list">
-              <div><dt>Item subtotal</dt><dd>{formatPrice(order.subtotal)}</dd></div>
-              <div><dt>Delivery fee</dt><dd>{formatPrice(order.deliveryFee)}</dd></div>
-              {order.discount ? (
-                <div><dt>Discount</dt><dd>−{formatPrice(order.discount)}</dd></div>
-              ) : null}
-              {order.taxes ? (
-                <div><dt>Taxes and charges</dt><dd>{formatPrice(order.taxes)}</dd></div>
-              ) : null}
-              <div><dt>Payment method</dt><dd>{order.paymentMethod}</dd></div>
-              <div>
-                <dt>Payment status</dt>
-                <dd>
-                  {order.paymentStatus === 'PAYMENT_DUE'
-                    ? 'Payment due'
-                    : order.paymentStatus === 'REFUNDED'
-                      ? 'Refunded'
-                      : 'Paid'}
-                </dd>
-              </div>
-              <div className="order-payment-total">
-                <dt>Grand total</dt>
-                <dd>{formatPrice(order.total)}</dd>
-              </div>
-            </dl>
-          </section>
+          {(order.subtotal !== undefined ||
+            order.deliveryFee !== undefined ||
+            order.discount !== undefined ||
+            order.taxes !== undefined ||
+            order.total !== undefined ||
+            order.paymentMethod ||
+            order.paymentStatus) && (
+            <section className="order-detail-section">
+              <h3>{t('orders.payment')}</h3>
+              <dl className="order-payment-list">
+                {order.subtotal !== undefined && (
+                  <div><dt>{t('orders.subtotal')}</dt><dd>{formatPrice(order.subtotal)}</dd></div>
+                )}
+                {order.deliveryFee !== undefined && (
+                  <div><dt>{t('orders.deliveryFee')}</dt><dd>{formatPrice(order.deliveryFee)}</dd></div>
+                )}
+                {order.discount !== undefined && (
+                  <div><dt>{t('orders.discount')}</dt><dd>−{formatPrice(order.discount)}</dd></div>
+                )}
+                {order.taxes !== undefined && (
+                  <div><dt>{t('orders.taxes')}</dt><dd>{formatPrice(order.taxes)}</dd></div>
+                )}
+                {order.paymentMethod && (
+                  <div>
+                    <dt>{t('orders.paymentMethod')}</dt>
+                    <dd>
+                      {order.paymentMethod === 'Cash on Delivery'
+                        ? t('orders.cashOnDelivery')
+                        : order.paymentMethod}
+                    </dd>
+                  </div>
+                )}
+                {order.paymentStatus && (
+                  <div>
+                    <dt>{t('orders.paymentStatus')}</dt>
+                    <dd>
+                      {order.paymentStatus === 'PAYMENT_DUE'
+                        ? t('orders.paymentDue')
+                        : order.paymentStatus === 'REFUNDED'
+                          ? t('orders.refunded')
+                          : t('orders.paid')}
+                    </dd>
+                  </div>
+                )}
+                {order.total !== undefined && (
+                  <div className="order-payment-total">
+                    <dt>{t('orders.grandTotal')}</dt>
+                    <dd>{formatPrice(order.total)}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
 
-          <section className="order-detail-section" aria-label="Order timeline">
-            <h3>Order timeline</h3>
+          <section
+            className="order-detail-section"
+            aria-label={t('orders.timeline')}
+          >
+            <h3>{t('orders.timeline')}</h3>
+            {order.status !== 'PENDING' &&
+              order.status !== 'ACCEPTED' &&
+              order.status !== 'PREPARING' &&
+              order.status !== 'REJECTED' && (
+                <p className="order-rider-demo-note">
+                  {t('orders.riderDemoNote')}
+                </p>
+              )}
             <ol className="order-timeline">
-              {visibleSteps.map((status) => {
+              {visibleSteps.map((status, index) => {
                 const timestamp = history.get(status)
                 const isCurrent = order.status === status
-                const isComplete = Boolean(timestamp) && !isCurrent
+                const currentIndex = visibleSteps.indexOf(order.status)
+                const isComplete =
+                  !isCurrent &&
+                  (Boolean(timestamp) ||
+                    (currentIndex >= 0 && index < currentIndex))
+                const isRiderStep = demoRiderStatuses.includes(status)
                 return (
                   <li
                     className={`order-timeline-step${isComplete ? ' is-complete' : ''}${isCurrent ? ' is-current' : ''}`}
@@ -228,7 +318,14 @@ export function OrderDetails({
                       {isComplete ? '✓' : ''}
                     </span>
                     <span className="order-timeline-copy">
-                      <strong>{orderStatusLabels[status]}</strong>
+                      <strong>{t(orderStatusTranslationKeys[status])}</strong>
+                      <span className={`order-timeline-owner${isRiderStep ? ' is-demo' : ''}`}>
+                        {isRiderStep
+                          ? t('orders.riderDemo')
+                          : status === 'PENDING'
+                            ? t('orders.customerActor')
+                            : t('orders.partner')}
+                      </span>
                       {timestamp && <small>{timestamp}</small>}
                     </span>
                   </li>
@@ -236,37 +333,37 @@ export function OrderDetails({
               })}
             </ol>
             {order.deliveredAt && (
-              <p className="order-delivered-at">Delivered at {order.deliveredAt}</p>
+              <p className="order-delivered-at">{t('orders.deliveredAt', { time: order.deliveredAt })}</p>
             )}
           </section>
 
           {order.rider && (
             <section className="order-detail-section order-rider-section">
-              <h3>Delivery partner <span>DEMO ASSIGNMENT</span></h3>
+              <h3>{t('orders.delivery')} <span>{t('orders.riderAssignment')}</span></h3>
               <dl className="order-detail-grid">
-                <div><dt>Rider name</dt><dd>{order.rider.name}</dd></div>
-                <div><dt>Rider ID</dt><dd>{order.rider.id}</dd></div>
+                <div><dt>{t('orders.riderName')}</dt><dd>{order.rider.name}</dd></div>
+                <div><dt>{t('orders.riderId')}</dt><dd>{order.rider.id}</dd></div>
                 {order.rider.vehicle && (
-                  <div><dt>Vehicle</dt><dd>{order.rider.vehicle}</dd></div>
+                  <div><dt>{t('orders.vehicle')}</dt><dd>{order.rider.vehicle}</dd></div>
                 )}
               </dl>
               {order.status === 'RIDER_ASSIGNED' && (
-                <p>Rider is coming to pickup.</p>
+                <p>{t('orders.riderComing')}</p>
               )}
-              {order.status === 'PICKED_UP' && <p>Order has been picked up by the rider.</p>}
-              {order.status === 'ON_THE_WAY' && <p>Order is on the way to the customer.</p>}
+              {order.status === 'PICKED_UP' && <p>{t('orders.pickedUpMessage')}</p>}
+              {order.status === 'ON_THE_WAY' && <p>{t('orders.onTheWayMessage')}</p>}
             </section>
           )}
 
           {order.status === 'READY' && (
-            <p className="order-delivery-waiting">Order Ready · Waiting for delivery partner...</p>
+            <p className="order-delivery-waiting">{t('orders.readyWaiting')}</p>
           )}
           {order.status === 'FINDING_RIDER' && (
-            <p className="order-delivery-waiting">Finding Delivery Partner...</p>
+            <p className="order-delivery-waiting">{t('orders.findingDelivery')}</p>
           )}
           {rejected && order.rejectionReason && (
             <p className="order-rejection-reason">
-              <strong>Rejection reason</strong>
+              <strong>{t('orders.rejectionReason')}</strong>
               {order.rejectionReason}
             </p>
           )}
@@ -280,7 +377,7 @@ export function OrderDetails({
                 onClick={() => onStatusChange(order.id, 'REJECTED')}
                 type="button"
               >
-                Reject Order
+                {t('orders.reject')}
               </button>
             )}
             {action && (
@@ -289,28 +386,30 @@ export function OrderDetails({
                 onClick={() => onStatusChange(order.id, action.status)}
                 type="button"
               >
-                {action.label}
+                {t(action.label)}
               </button>
             )}
             {simulatedAction && (
               <>
-                <span>Demo simulation only · Rider-side status</span>
+                <span>{t('orders.simulationOnly')}</span>
                 <button
                   className="order-action-button order-action-demo"
                   onClick={() => onStatusChange(order.id, simulatedAction.status)}
                   type="button"
                 >
-                  {simulatedAction.label}
+                  {t('orders.riderDemoButton', {
+                    action: t(simulatedAction.label),
+                  })}
                 </button>
               </>
             )}
           </footer>
         )}
         {order.status === 'DELIVERED' && (
-          <footer className="order-details-final">Delivered · This order is in your order history.</footer>
+          <footer className="order-details-final">{t('orders.deliveredHistory')}</footer>
         )}
         {rejected && (
-          <footer className="order-details-final">Order Rejected · This order is in your order history.</footer>
+          <footer className="order-details-final">{t('orders.rejectedHistory')}</footer>
         )}
       </section>
     </div>

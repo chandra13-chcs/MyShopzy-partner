@@ -1,5 +1,6 @@
 import { OrderCard } from './OrderCard'
 import type { DemoOrder } from './types'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 interface OrderListProps {
   onOpen: (order: DemoOrder) => void
@@ -14,6 +15,7 @@ export function OrderList({
   orders,
   title,
 }: OrderListProps) {
+  const { t } = useLanguage()
   return (
     <section className="orders-group" aria-label={title}>
       <div className="orders-group-heading">
@@ -32,7 +34,7 @@ export function OrderList({
           ))}
         </div>
       ) : (
-        <div className="orders-group-empty">No orders in this section.</div>
+        <div className="orders-group-empty">{t('orders.emptyGroup')}</div>
       )}
     </section>
   )

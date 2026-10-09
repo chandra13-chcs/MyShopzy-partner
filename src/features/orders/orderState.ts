@@ -44,8 +44,8 @@ function text(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback
 }
 
-function amount(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+function amount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 function normalizeStatus(value: unknown): OrderStatus {
@@ -58,11 +58,11 @@ function normalizeStatus(value: unknown): OrderStatus {
 function normalizeItem(value: unknown): OrderItem | undefined {
   if (!isRecord(value) || typeof value.productName !== 'string') return undefined
 
-  const item: OrderItem = {
-    productName: value.productName,
-    quantity: amount(value.quantity),
-    unitPrice: amount(value.unitPrice),
-  }
+  const item: OrderItem = { productName: value.productName }
+  const quantity = amount(value.quantity)
+  const unitPrice = amount(value.unitPrice)
+  if (quantity !== undefined) item.quantity = quantity
+  if (unitPrice !== undefined) item.unitPrice = unitPrice
 
   if (typeof value.variant === 'string') item.variant = value.variant
   if (Array.isArray(value.addOns)) {
@@ -96,7 +96,7 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
   if (!isRecord(value) || typeof value.id !== 'string') return undefined
 
   const status = normalizeStatus(value.status)
-  const orderedAt = text(value.orderedAt, 'Time unavailable')
+  const orderedAt = text(value.orderedAt)
   const statusHistory: OrderTimelineEvent[] = Array.isArray(value.statusHistory)
     ? value.statusHistory.flatMap((event): OrderTimelineEvent[] => {
         if (!isRecord(event)) return []
@@ -107,19 +107,16 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
       })
     : []
 
-  if (statusHistory.length === 0 && status !== 'UNKNOWN') {
-    statusHistory.push({ status: 'PENDING', timestamp: orderedAt })
-    if (status !== 'PENDING') {
-      statusHistory.push({ status, timestamp: orderedAt })
-    }
-  }
-
-  const paymentMethod: PaymentMethod =
-    value.paymentMethod === 'Cash on Delivery' ? 'Cash on Delivery' : 'UPI'
-  const paymentStatus: PaymentStatus =
-    value.paymentStatus === 'PAYMENT_DUE' || value.paymentStatus === 'REFUNDED'
+  const paymentMethod: PaymentMethod | undefined =
+    value.paymentMethod === 'UPI' || value.paymentMethod === 'Cash on Delivery'
+      ? value.paymentMethod
+      : undefined
+  const paymentStatus: PaymentStatus | undefined =
+    value.paymentStatus === 'PAID' ||
+    value.paymentStatus === 'PAYMENT_DUE' ||
+    value.paymentStatus === 'REFUNDED'
       ? value.paymentStatus
-      : 'PAID'
+      : undefined
   const items = Array.isArray(value.items)
     ? value.items.flatMap((item) => {
         const normalizedItem = normalizeItem(item)
@@ -129,24 +126,29 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
   const rider = normalizeRider(value.rider)
   const order: DemoOrder = {
     id: value.id,
-    customerName: text(value.customerName, 'Customer unavailable'),
-    customerPhone: text(value.customerPhone, 'Not available'),
+    customerName: text(value.customerName, 'Customer name not provided'),
+    customerPhone: text(value.customerPhone),
     items,
-    subtotal: amount(value.subtotal),
-    deliveryFee: amount(value.deliveryFee),
-    total: amount(value.total),
     status,
-    address: text(value.address, 'Address unavailable'),
+    address: text(value.address),
     area: text(value.area),
     city: text(value.city),
-    orderedAt,
-    paymentMethod,
-    paymentStatus,
     statusHistory,
   }
 
-  if (typeof value.discount === 'number') order.discount = amount(value.discount)
-  if (typeof value.taxes === 'number') order.taxes = amount(value.taxes)
+  if (orderedAt) order.orderedAt = orderedAt
+  if (paymentMethod) order.paymentMethod = paymentMethod
+  if (paymentStatus) order.paymentStatus = paymentStatus
+  const subtotal = amount(value.subtotal)
+  const deliveryFee = amount(value.deliveryFee)
+  const total = amount(value.total)
+  const discount = amount(value.discount)
+  const taxes = amount(value.taxes)
+  if (subtotal !== undefined) order.subtotal = subtotal
+  if (deliveryFee !== undefined) order.deliveryFee = deliveryFee
+  if (total !== undefined) order.total = total
+  if (discount !== undefined) order.discount = discount
+  if (taxes !== undefined) order.taxes = taxes
   if (typeof value.deliveryInstructions === 'string') {
     order.deliveryInstructions = value.deliveryInstructions
   }
@@ -156,6 +158,23 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
     order.rejectionReason = value.rejectionReason
   }
   return order
+}
+
+export function formatCustomerPhone(phone: string): string {
+  if (!phone) return 'Phone not provided'
+
+  const digitCount = phone.replace(/\D/g, '').length
+  if (digitCount === 0) return phone
+  if (digitCount <= 4) {
+    return /[•*]/.test(phone) ? phone : phone.replace(/\d/g, '•')
+  }
+
+  let index = 0
+  return phone.replace(/\d/g, (digit) => {
+    const masked = index < digitCount - 4
+    index += 1
+    return masked ? '•' : digit
+  })
 }
 
 export function normalizeDemoOrders(value: unknown): DemoOrder[] {
@@ -177,18 +196,12 @@ export function transitionDemoOrder(
   const allowed = allowedTransitions[order.status]
   if (!allowed?.includes(requestedStatus)) return order
 
-  const nextStatuses: OrderStatus[] =
-    order.status === 'PREPARING' && requestedStatus === 'READY'
-      ? ['READY', 'FINDING_RIDER']
-      : [requestedStatus]
   const statusHistory = [...order.statusHistory]
-  for (const status of nextStatuses) {
-    statusHistory.push({ status, timestamp })
-  }
+  statusHistory.push({ status: requestedStatus, timestamp })
 
   const nextOrder: DemoOrder = {
     ...order,
-    status: nextStatuses[nextStatuses.length - 1] ?? 'UNKNOWN',
+    status: requestedStatus,
     statusHistory,
   }
 
@@ -200,10 +213,5 @@ export function transitionDemoOrder(
     }
   }
   if (requestedStatus === 'DELIVERED') nextOrder.deliveredAt = timestamp
-  if (requestedStatus === 'REJECTED') {
-    nextOrder.rejectionReason =
-      'Partner unavailable to prepare this order.'
-    if (order.paymentStatus === 'PAID') nextOrder.paymentStatus = 'REFUNDED'
-  }
   return nextOrder
 }

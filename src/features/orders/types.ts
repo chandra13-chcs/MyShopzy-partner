@@ -11,6 +11,14 @@ export type OrderStatus =
   | 'REJECTED'
   | 'UNKNOWN'
 
+export const demoRiderStatuses: OrderStatus[] = [
+  'FINDING_RIDER',
+  'RIDER_ASSIGNED',
+  'PICKED_UP',
+  'ON_THE_WAY',
+  'DELIVERED',
+]
+
 export type PaymentMethod = 'UPI' | 'Cash on Delivery'
 export type PaymentStatus = 'PAID' | 'PAYMENT_DUE' | 'REFUNDED'
 
@@ -30,8 +38,8 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
 
 export interface OrderItem {
   productName: string
-  quantity: number
-  unitPrice: number
+  quantity?: number
+  unitPrice?: number
   variant?: string
   addOns?: string[]
   customizations?: string[]
@@ -54,19 +62,19 @@ export interface DemoOrder {
   customerName: string
   customerPhone: string
   items: OrderItem[]
-  subtotal: number
-  deliveryFee: number
+  subtotal?: number
+  deliveryFee?: number
   discount?: number
   taxes?: number
-  total: number
+  total?: number
   status: OrderStatus
   address: string
   area: string
   city: string
   deliveryInstructions?: string
-  orderedAt: string
-  paymentMethod: PaymentMethod
-  paymentStatus: PaymentStatus
+  orderedAt?: string
+  paymentMethod?: PaymentMethod
+  paymentStatus?: PaymentStatus
   statusHistory: OrderTimelineEvent[]
   rider?: DemoRider
   deliveredAt?: string

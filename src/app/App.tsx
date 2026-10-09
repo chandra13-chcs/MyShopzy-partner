@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
 import OrdersWorkspace from '../features/orders/OrdersWorkspace'
+import { NewOrderAlertsProvider } from '../features/orders/NewOrderAlerts'
 import { initialOrders } from '../features/orders/orderDemoData'
 import { normalizeDemoOrders, transitionDemoOrder } from '../features/orders/orderState'
 import type { OrderStatus } from '../features/orders/types'
@@ -12,6 +13,8 @@ import { initialOperatingHours, initialStoreProfile } from '../features/store/st
 import type { StoreProfile } from '../features/store/types'
 import DashboardPage from '../pages/DashboardPage'
 import LoginPage from '../pages/LoginPage'
+import MorePage from '../pages/MorePage'
+import { LanguageProvider } from '../i18n/LanguageProvider'
 import { resolveRoute, type AppRoute } from './routes'
 
 function App() {
@@ -56,10 +59,10 @@ function App() {
   if (route.path === '/') {
     page = (
       <DashboardPage
-        businessType={storeProfile.businessType}
         businessName={storeProfile.businessName}
         orders={safeOrders}
         storeOpen={storeOpen}
+        onNavigate={navigate}
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
       />
     )
@@ -91,6 +94,8 @@ function App() {
         storeOpen={storeOpen}
       />
     )
+  } else if (route.path === '/more') {
+    page = <MorePage onNavigate={navigate} />
   } else if (route.path === '/login') {
     page = <LoginPage />
   } else {
@@ -106,14 +111,18 @@ function App() {
   }
 
   return (
-    <AppShell
-      activePath={route.path}
-      businessName={storeProfile.businessName}
-      onNavigate={navigate}
-      storeOpen={storeOpen}
-    >
-      {page}
-    </AppShell>
+    <LanguageProvider>
+      <NewOrderAlertsProvider orders={safeOrders}>
+        <AppShell
+          activePath={route.path}
+          businessName={storeProfile.businessName}
+          onNavigate={navigate}
+          storeOpen={storeOpen}
+        >
+          {page}
+        </AppShell>
+      </NewOrderAlertsProvider>
+    </LanguageProvider>
   )
 }
 

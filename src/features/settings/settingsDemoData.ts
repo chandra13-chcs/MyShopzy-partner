@@ -19,8 +19,8 @@ export const notificationOptions: {
   },
   {
     key: 'orderSound',
-    label: 'Order sound',
-    description: 'Demo preference for an audible new-order alert.',
+    label: 'New-order sound',
+    description: 'Play the uploaded alert sound for newly received orders.',
   },
   {
     key: 'orderVibration',
