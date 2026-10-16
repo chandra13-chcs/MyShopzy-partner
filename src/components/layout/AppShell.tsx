@@ -9,6 +9,7 @@ interface AppShellProps {
   businessName: string
   children: ReactNode
   onNavigate: (path: string) => void
+  onOpenOrder: (orderId: string) => void
   storeOpen: boolean
 }
 
@@ -89,6 +90,7 @@ export function AppShell({
   businessName,
   children,
   onNavigate,
+  onOpenOrder,
   storeOpen,
 }: AppShellProps) {
   const { t } = useLanguage()
@@ -170,7 +172,9 @@ export function AppShell({
                   ? t('alert.soundBlocked', { id: alert.orderId })
                   : alert.reason === 'disabled'
                     ? t('alert.soundDisabled', { id: alert.orderId })
-                    : t('alert.soundUnavailable', { id: alert.orderId })}
+                    : alert.reason === 'unavailable'
+                      ? t('alert.soundUnavailable', { id: alert.orderId })
+                      : t('alert.orderReceived', { id: alert.orderId })}
               </strong>
               <span>{t('alert.checkOrders')}</span>
             </div>
@@ -178,7 +182,7 @@ export function AppShell({
               className="new-order-fallback-open"
               onClick={() => {
                 dismissAlert(alert.orderId)
-                onNavigate('/orders')
+                onOpenOrder(alert.orderId)
               }}
               type="button"
             >
@@ -217,9 +221,10 @@ export function AppShell({
             </span>
           </div>
           <button
-            aria-label={t('app.profileMenu')}
+            aria-label={t('nav.settings')}
             className="profile-button"
-            title={t('app.profileMenu')}
+            onClick={() => onNavigate('/settings')}
+            title={t('nav.settings')}
             type="button"
           >
             <span aria-hidden="true">{businessName.slice(0, 1).toUpperCase()}</span>

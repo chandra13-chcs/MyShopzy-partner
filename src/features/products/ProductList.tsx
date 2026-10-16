@@ -37,6 +37,7 @@ export function ProductList({
               <th scope="col">Product</th>
               <th scope="col">Category</th>
               <th scope="col">Price</th>
+              <th scope="col">Stock</th>
               <th scope="col">Availability</th>
               <th scope="col"><span className="sr-only">Actions</span></th>
             </tr>
@@ -51,13 +52,26 @@ export function ProductList({
                 <td>{categoryName(product.categoryId)}</td>
                 <td className="product-price">₹{product.price.toLocaleString('en-IN')}</td>
                 <td>
-                  <AvailabilityBadge available={product.available} />
+                  <span className={`product-stock-value${product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
+                    {product.stockQuantity}
+                  </span>
+                  <span className="product-stock-threshold">
+                    Alert at {product.restockThreshold}
+                  </span>
+                </td>
+                <td>
+                  <AvailabilityBadge
+                    available={product.available && product.stockQuantity > 0}
+                  />
                   <label className="sr-only" htmlFor={`availability-${product.id}`}>
-                    {`Make ${product.name} ${product.available ? 'out of stock' : 'available'}`}
+                    {product.stockQuantity === 0
+                      ? `Add stock before making ${product.name} available`
+                      : `Make ${product.name} ${product.available ? 'out of stock' : 'available'}`}
                   </label>
                   <input
                     checked={product.available}
                     className="product-inline-toggle"
+                    disabled={product.stockQuantity === 0}
                     id={`availability-${product.id}`}
                     onChange={(event) => onAvailabilityChange(product.id, event.target.checked)}
                     type="checkbox"
@@ -101,12 +115,19 @@ export function ProductList({
             <p className="product-card-description">
               {product.description || 'No description provided.'}
             </p>
+            <p className={`product-card-stock${product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
+              Stock: <strong>{product.stockQuantity}</strong>
+              <span>Alert at {product.restockThreshold}</span>
+            </p>
             <div className="product-card-status">
-              <AvailabilityBadge available={product.available} />
+              <AvailabilityBadge
+                available={product.available && product.stockQuantity > 0}
+              />
               <label className="availability-control compact-control">
                 <span className="sr-only">Available for sale</span>
                 <input
                   checked={product.available}
+                  disabled={product.stockQuantity === 0}
                   onChange={(event) => onAvailabilityChange(product.id, event.target.checked)}
                   type="checkbox"
                 />

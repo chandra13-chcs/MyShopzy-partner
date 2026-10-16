@@ -20,18 +20,40 @@ export function ProductForm({
   const [price, setPrice] = useState(product ? String(product.price) : '')
   const [description, setDescription] = useState(product?.description ?? '')
   const [available, setAvailable] = useState(product?.available ?? true)
+  const [stockQuantity, setStockQuantity] = useState(
+    String(product?.stockQuantity ?? 0),
+  )
+  const [restockThreshold, setRestockThreshold] = useState(
+    String(product?.restockThreshold ?? 5),
+  )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const title = product ? 'Edit product' : 'Add product'
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const parsedPrice = Number(price)
+    const parsedStockQuantity = Number(stockQuantity)
+    const parsedRestockThreshold = Number(restockThreshold)
     const nextErrors: Record<string, string> = {}
 
     if (!name.trim()) nextErrors.name = 'Enter a product name.'
     if (!categoryId) nextErrors.categoryId = 'Choose a category.'
     if (price.trim() === '' || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
       nextErrors.price = 'Enter a valid non-negative price.'
+    }
+    if (
+      stockQuantity.trim() === '' ||
+      !Number.isInteger(parsedStockQuantity) ||
+      parsedStockQuantity < 0
+    ) {
+      nextErrors.stockQuantity = 'Enter a whole number of 0 or more.'
+    }
+    if (
+      restockThreshold.trim() === '' ||
+      !Number.isInteger(parsedRestockThreshold) ||
+      parsedRestockThreshold < 1
+    ) {
+      nextErrors.restockThreshold = 'Enter a whole number of 1 or more.'
     }
 
     setErrors(nextErrors)
@@ -42,7 +64,9 @@ export function ProductForm({
       categoryId,
       price: parsedPrice,
       description: description.trim(),
-      available,
+      available: available && parsedStockQuantity > 0,
+      stockQuantity: parsedStockQuantity,
+      restockThreshold: parsedRestockThreshold,
     })
   }
 
@@ -132,6 +156,50 @@ export function ProductForm({
             value={description}
           />
         </label>
+
+        <div className="products-form-row">
+          <label className="products-field">
+            <span>Stock on hand</span>
+            <input
+              aria-describedby={errors.stockQuantity ? 'product-stock-error' : undefined}
+              aria-invalid={Boolean(errors.stockQuantity)}
+              inputMode="numeric"
+              min="0"
+              onChange={(event) => setStockQuantity(event.target.value)}
+              step="1"
+              type="number"
+              value={stockQuantity}
+            />
+            {errors.stockQuantity && (
+              <span className="products-field-error" id="product-stock-error">
+                {errors.stockQuantity}
+              </span>
+            )}
+          </label>
+          <label className="products-field">
+            <span>Low-stock alert at</span>
+            <input
+              aria-describedby={
+                errors.restockThreshold ? 'product-restock-threshold-error' : undefined
+              }
+              aria-invalid={Boolean(errors.restockThreshold)}
+              inputMode="numeric"
+              min="1"
+              onChange={(event) => setRestockThreshold(event.target.value)}
+              step="1"
+              type="number"
+              value={restockThreshold}
+            />
+            {errors.restockThreshold && (
+              <span
+                className="products-field-error"
+                id="product-restock-threshold-error"
+              >
+                {errors.restockThreshold}
+              </span>
+            )}
+          </label>
+        </div>
 
         <div className="products-field">
           <span>Product image</span>

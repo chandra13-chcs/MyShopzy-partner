@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CategoryForm } from './CategoryForm'
 import { CategoryList } from './CategoryList'
 import { Dialog } from './Dialog'
-import { initialCategories, initialProducts } from './demoData'
+import { initialCategories } from './demoData'
 import { ProductForm } from './ProductForm'
 import { ProductList } from './ProductList'
 import type {
@@ -16,12 +16,19 @@ import './products.css'
 type WorkspaceTab = 'products' | 'categories'
 type ProductFilter = 'all' | 'available' | 'out-of-stock'
 
+interface ProductsWorkspaceProps {
+  products: Product[]
+  onProductsChange: (update: (current: Product[]) => Product[]) => void
+}
+
 function isProductFilter(value: string): value is ProductFilter {
   return value === 'all' || value === 'available' || value === 'out-of-stock'
 }
 
-export default function ProductsWorkspace() {
-  const [products, setProducts] = useState(initialProducts)
+export default function ProductsWorkspace({
+  products,
+  onProductsChange,
+}: ProductsWorkspaceProps) {
   const [categories, setCategories] = useState(initialCategories)
   const [tab, setTab] = useState<WorkspaceTab>('products')
   const [filter, setFilter] = useState<ProductFilter>('all')
@@ -40,13 +47,13 @@ export default function ProductsWorkspace() {
 
   function saveProduct(draft: ProductDraft) {
     if (productToEdit) {
-      setProducts((current) =>
+      onProductsChange((current) =>
         current.map((product) =>
           product.id === productToEdit.id ? { ...draft, id: product.id } : product,
         ),
       )
     } else {
-      setProducts((current) => [
+      onProductsChange((current) => [
         ...current,
         { ...draft, id: `product-${Date.now()}` },
       ])
@@ -97,7 +104,7 @@ export default function ProductsWorkspace() {
 
   function deleteProduct() {
     if (!productToDelete) return
-    setProducts((current) =>
+    onProductsChange((current) =>
       current.filter((product) => product.id !== productToDelete.id),
     )
     setProductToDelete(undefined)
@@ -204,7 +211,7 @@ export default function ProductsWorkspace() {
           <ProductList
             categories={categories}
             onAvailabilityChange={(productId, available) =>
-              setProducts((current) =>
+              onProductsChange((current) =>
                 current.map((product) =>
                   product.id === productId ? { ...product, available } : product,
                 ),

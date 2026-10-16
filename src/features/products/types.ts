@@ -10,6 +10,8 @@ export interface Product {
   price: number
   description: string
   available: boolean
+  stockQuantity: number
+  restockThreshold: number
 }
 
 export type ProductDraft = Omit<Product, 'id'>

@@ -1,19 +1,27 @@
 import { useState } from 'react'
 import type { DemoOrder } from '../orders/types'
+import type { Product } from '../products/types'
 import { OrderSummary } from './OrderSummary'
 import { ProductPerformance } from './ProductPerformance'
 import { ReportFilters } from './ReportFilters'
 import { reportDemoData, periodLabels } from './reportDemoData'
 import { SalesSummary } from './SalesSummary'
 import { SalesTrend } from './SalesTrend'
+import { ShopOverview } from './ShopOverview'
 import type { ReportPeriod } from './types'
 import './reports.css'
 
 interface ReportsWorkspaceProps {
+  onNavigate: (path: string) => void
   orders: DemoOrder[]
+  products: Product[]
 }
 
-export default function ReportsWorkspace({ orders }: ReportsWorkspaceProps) {
+export default function ReportsWorkspace({
+  onNavigate,
+  orders,
+  products,
+}: ReportsWorkspaceProps) {
   const [period, setPeriod] = useState<ReportPeriod>('today')
   const data = reportDemoData[period]
 
@@ -48,6 +56,11 @@ export default function ReportsWorkspace({ orders }: ReportsWorkspaceProps) {
       <ProductPerformance
         categories={data.categories}
         products={data.products}
+      />
+      <ShopOverview
+        onNavigate={onNavigate}
+        orders={orders}
+        products={products}
       />
     </div>
   )

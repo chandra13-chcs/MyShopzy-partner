@@ -1,12 +1,14 @@
 import { OrderStatusBadge } from '../features/orders/OrderStatusBadge'
 import type { DemoOrder } from '../features/orders/types'
 import { useLanguage } from '../i18n/LanguageContext'
+import { orderStatusTranslationKeys } from '../i18n/translations'
 
 interface DashboardPageProps {
   businessName: string
   orders: DemoOrder[]
   storeOpen: boolean
   onNavigate: (path: string) => void
+  onOpenOrder: (orderId: string) => void
   onToggleStore: () => void
 }
 
@@ -19,6 +21,7 @@ export default function DashboardPage({
   orders,
   storeOpen,
   onNavigate,
+  onOpenOrder,
   onToggleStore,
 }: DashboardPageProps) {
   const { language, t } = useLanguage()
@@ -42,7 +45,7 @@ export default function DashboardPage({
         order.status !== 'UNKNOWN',
     )
     .slice(0, 4)
-  const currencyLocale = language === 'te' ? 'te-IN' : 'en-IN'
+  const currencyLocale = language === 'te' ? 'te-IN' : language === 'hi' ? 'hi-IN' : 'en-IN'
 
   return (
     <div className="dashboard-home">
@@ -129,14 +132,25 @@ export default function DashboardPage({
         {activeOrders.length > 0 ? (
           <ul className="home-active-list">
             {activeOrders.map((order) => (
-              <li className="home-active-row" key={order.id}>
-                <span className="home-active-order">
-                  <strong>#{order.id}</strong>
-                  <span>{order.customerName}</span>
-                </span>
-                <OrderStatusBadge status={order.status} />
-              </li>
-            ))}
+                <li key={order.id}>
+                  <button
+                    aria-label={t('orders.viewOrder', {
+                      id: order.id,
+                      customer: order.customerName,
+                      status: t(orderStatusTranslationKeys[order.status]),
+                    })}
+                    className="home-active-row"
+                    onClick={() => onOpenOrder(order.id)}
+                    type="button"
+                  >
+                    <span className="home-active-order">
+                      <strong>#{order.id}</strong>
+                      <span>{order.customerName}</span>
+                    </span>
+                    <OrderStatusBadge status={order.status} />
+                  </button>
+                </li>
+              ))}
           </ul>
         ) : (
           <p className="home-empty-active">{t('home.noActiveOrders')}</p>

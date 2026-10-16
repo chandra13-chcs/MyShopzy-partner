@@ -1,11 +1,18 @@
+import { useCallback, useEffect, useState } from 'react'
 import { OrderStatusBadge } from './OrderStatusBadge'
-import { formatCustomerPhone, normalizeDemoOrder } from './orderState'
-import type { DemoOrder } from './types'
+import {
+  formatCustomerPhone,
+  getOrderTimerStart,
+  normalizeDemoOrder,
+} from './orderState'
+import type { DemoOrder, OrderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import {
   orderStatusTranslationKeys,
   riderStatusTranslationKeys,
 } from '../../i18n/translations'
+
+const pendingTimerDurationMs = 10 * 60 * 1000
 
 interface OrderCardProps {
   onOpen: (order: DemoOrder) => void
@@ -36,6 +43,70 @@ function confirmComplete(
   }
 }
 
+function formatTimerDuration(durationMs: number) {
+  const totalSeconds = Math.floor(durationMs / 1000)
+  const totalHours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  if (totalHours > 0) {
+    return `${String(totalHours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function OrderTimer({
+  orderId,
+  orderedAt,
+  pending,
+}: {
+  orderId: string
+  orderedAt?: string
+  pending: boolean
+}) {
+  const { t } = useLanguage()
+  const [startedAt, setStartedAt] = useState<number>()
+  const [now, setNow] = useState(() => Date.now())
+  const initializeTimer = useCallback(() => {
+    setStartedAt(getOrderTimerStart(orderId, orderedAt))
+    setNow(Date.now())
+  }, [orderId, orderedAt])
+
+  useEffect(() => {
+    initializeTimer()
+    const interval = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [initializeTimer])
+
+  if (startedAt === undefined) return null
+
+  const elapsed = Math.max(0, now - startedAt)
+  const remaining = Math.max(0, pendingTimerDurationMs - elapsed)
+  const timerState =
+    !pending
+      ? ''
+      : remaining === 0
+        ? 'is-expired'
+        : remaining <= 2 * 60 * 1000
+          ? 'is-expiring'
+          : ''
+
+  return (
+    <span className={`new-order-timer ${timerState}`} aria-live="off">
+      <span>{t('orders.timerElapsed', { time: formatTimerDuration(elapsed) })}</span>
+      {pending && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span>
+            {remaining === 0
+              ? t('orders.timerExpired')
+              : t('orders.timerRemaining', { time: formatTimerDuration(remaining) })}
+          </span>
+        </>
+      )}
+    </span>
+  )
+}
+
 export function OrderCard({
   onOpen,
   onStatusChange,
@@ -43,6 +114,7 @@ export function OrderCard({
 }: OrderCardProps) {
   const { t } = useLanguage()
   const order = normalizeDemoOrder(rawOrder)
+
   if (!order || order.status === 'UNKNOWN') {
     return (
       <article className="order-card order-card-unavailable">
@@ -60,9 +132,24 @@ export function OrderCard({
   const address = [order.address, order.area, order.city]
     .filter((part) => part.trim())
     .join(', ')
+  const latestEvents = [...order.statusHistory].reverse()
+  const preparingEvent =
+    latestEvents.find((event) => event.status === 'PREPARING') ??
+    latestEvents.find((event) => event.status === 'ACCEPTED')
+  const statusTimes = [
+    preparingEvent,
+    latestEvents.find((event) => event.status === 'READY_FOR_PICKUP'),
+    latestEvents.find((event) => event.status === 'COMPLETED'),
+    latestEvents.find((event) => event.status === 'REJECTED'),
+  ].filter(
+    (event): event is { status: OrderStatus; timestamp: string } =>
+      event !== undefined,
+  )
 
   return (
-    <article className={`order-card${isNew ? ' is-pending is-new-order' : ''}`}>
+    <article
+      className={`order-card order-card-${order.status.toLowerCase()}${isNew ? ' is-pending is-new-order' : ''}`}
+    >
       <button
         aria-label={t('orders.viewOrder', {
           id: order.id,
@@ -75,8 +162,11 @@ export function OrderCard({
       >
         {isNew && (
           <span className="new-order-banner">
-            <span aria-hidden="true">!</span>
-            {t('orders.newBadge')}
+            <span className="new-order-banner-label">
+              <span aria-hidden="true">!</span>
+              {t('orders.newBadge')}
+            </span>
+            <OrderTimer orderId={order.id} orderedAt={order.orderedAt} pending />
           </span>
         )}
         <span className="order-card-topline">
@@ -110,6 +200,28 @@ export function OrderCard({
                 })}
           </span>
         </span>
+        {!isNew && (
+          <span className="order-card-age-row">
+            <OrderTimer
+              orderId={order.id}
+              orderedAt={order.orderedAt}
+              pending={false}
+            />
+          </span>
+        )}
+        {statusTimes.length > 0 && (
+          <span className="order-card-status-times">
+            {statusTimes.map(({ status, timestamp }) => (
+              <span
+                className={`order-card-status-time status-time-${status.toLowerCase()}`}
+                key={status}
+              >
+                <strong>{t(orderStatusTranslationKeys[status])}</strong>
+                <time>{timestamp}</time>
+              </span>
+            ))}
+          </span>
+        )}
         <span className="order-card-item-list" aria-label="Ordered items">
           {order.items.map((item, index) => {
             const lineTotal =
@@ -198,6 +310,7 @@ export function OrderCard({
             onClick={() => onStatusChange(order.id, 'ACCEPTED')}
             type="button"
           >
+            <span aria-hidden="true" className="order-action-icon">✓</span>
             {t('orders.accept')}
           </button>
           <button
@@ -205,6 +318,7 @@ export function OrderCard({
             onClick={() => onStatusChange(order.id, 'REJECTED')}
             type="button"
           >
+            <span aria-hidden="true" className="order-action-icon">×</span>
             {t('orders.reject')}
           </button>
         </div>

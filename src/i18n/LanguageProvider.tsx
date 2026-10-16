@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { LanguageContext, type LanguageContextValue } from './LanguageContext'
 import { translate, type Language } from './translations'
 
@@ -6,7 +6,8 @@ const languageStorageKey = 'myshopzy.language'
 
 function readSavedLanguage(): Language {
   try {
-    return window.localStorage.getItem(languageStorageKey) === 'te' ? 'te' : 'en'
+    const savedLanguage = window.localStorage.getItem(languageStorageKey)
+    return savedLanguage === 'te' || savedLanguage === 'hi' ? savedLanguage : 'en'
   } catch {
     return 'en'
   }
@@ -14,6 +15,10 @@ function readSavedLanguage(): Language {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(readSavedLanguage)
+
+  useEffect(() => {
+    document.documentElement.lang = language
+  }, [language])
 
   function setLanguage(nextLanguage: Language) {
     setLanguageState(nextLanguage)

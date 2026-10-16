@@ -8,8 +8,10 @@ import {
   transitionDemoOrder,
   transitionDemoOrderDelivery,
 } from '../features/orders/orderState'
-import type { OrderStatus, RiderStatus } from '../features/orders/types'
+import type { DemoOrder, OrderStatus, RiderStatus } from '../features/orders/types'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
+import { initialProducts } from '../features/products/demoData'
+import type { Product } from '../features/products/types'
 import ReportsWorkspace from '../features/reports/ReportsWorkspace'
 import SettingsWorkspace from '../features/settings/SettingsWorkspace'
 import StoreWorkspace from '../features/store/StoreWorkspace'
@@ -29,10 +31,13 @@ function App() {
   const [storeProfile, setStoreProfile] = useState(initialStoreProfile)
   const [operatingHours, setOperatingHours] = useState(initialOperatingHours)
   const [orders, setOrders] = useState(() => normalizeDemoOrders(initialOrders))
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [selectedOrderId, setSelectedOrderId] = useState<string>()
   const safeOrders = normalizeDemoOrders(orders)
 
   useEffect(() => {
     function syncRoute() {
+      setSelectedOrderId(undefined)
       setRoute(resolveRoute(window.location.pathname))
     }
 
@@ -41,8 +46,15 @@ function App() {
   }, [])
 
   function navigate(path: string) {
+    setSelectedOrderId(undefined)
     window.history.pushState({}, '', path)
     setRoute(resolveRoute(path))
+  }
+
+  function openOrder(orderId: string) {
+    setSelectedOrderId(orderId)
+    window.history.pushState({}, '', '/orders')
+    setRoute(resolveRoute('/orders'))
   }
 
   function updateOrderStatus(orderId: string, status: OrderStatus) {
@@ -73,6 +85,34 @@ function App() {
     )
   }
 
+  function simulateNewOrder() {
+    const now = new Date()
+    const timestamp = now.toLocaleTimeString('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+    const order: DemoOrder = {
+      id: `MS-TEST-${now.getTime()}`,
+      customerName: 'Test Customer',
+      customerPhone: '+91 ••••• 9000',
+      items: [{ productName: 'Chicken Biryani', quantity: 1, unitPrice: 220 }],
+      subtotal: 220,
+      deliveryFee: 20,
+      total: 240,
+      status: 'PENDING',
+      address: '1-1, Demo Test Street',
+      area: 'Demo Area',
+      city: 'Mandapeta',
+      deliveryInstructions: 'Test order created in the local demo.',
+      orderedAt: `Today, ${timestamp}`,
+      paymentMethod: 'UPI',
+      paymentStatus: 'PAID',
+      statusHistory: [{ status: 'PENDING', timestamp }],
+    }
+
+    setOrders((current) => [order, ...normalizeDemoOrders(current)])
+  }
+
   let page
   if (route.path === '/') {
     page = (
@@ -81,6 +121,7 @@ function App() {
         orders={safeOrders}
         storeOpen={storeOpen}
         onNavigate={navigate}
+        onOpenOrder={openOrder}
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
       />
     )
@@ -88,12 +129,20 @@ function App() {
     page = (
       <OrdersWorkspace
         orders={safeOrders}
+        onSimulateOrder={simulateNewOrder}
         onDeliveryStatusChange={updateOrderDeliveryStatus}
         onStatusChange={updateOrderStatus}
+        onSelectOrder={setSelectedOrderId}
+        selectedOrderId={selectedOrderId}
       />
     )
   } else if (route.path === '/products') {
-    page = <ProductsWorkspace />
+    page = (
+      <ProductsWorkspace
+        onProductsChange={setProducts}
+        products={products}
+      />
+    )
   } else if (route.path === '/store') {
     page = (
       <StoreWorkspace
@@ -106,7 +155,13 @@ function App() {
       />
     )
   } else if (route.path === '/reports') {
-    page = <ReportsWorkspace orders={safeOrders} />
+    page = (
+      <ReportsWorkspace
+        onNavigate={navigate}
+        orders={safeOrders}
+        products={products}
+      />
+    )
   } else if (route.path === '/settings') {
     page = (
       <SettingsWorkspace
@@ -139,6 +194,7 @@ function App() {
           activePath={route.path}
           businessName={storeProfile.businessName}
           onNavigate={navigate}
+          onOpenOrder={openOrder}
           storeOpen={storeOpen}
         >
           {page}

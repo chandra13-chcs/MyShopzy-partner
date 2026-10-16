@@ -13,7 +13,12 @@ export function NotificationPreferences({
   preferences,
 }: NotificationPreferencesProps) {
   const { t } = useLanguage()
-  const { setSoundEnabled, soundEnabled } = useNewOrderAlerts()
+  const {
+    alertsEnabled,
+    setAlertsEnabled,
+    setSoundEnabled,
+    soundEnabled,
+  } = useNewOrderAlerts()
 
   return (
     <section className="settings-card" aria-labelledby="notification-preferences-heading">
@@ -48,12 +53,16 @@ export function NotificationPreferences({
                   : option.label
               }
               checked={
-                option.key === 'orderSound'
-                  ? soundEnabled
-                  : preferences[option.key]
+                option.key === 'newOrderAlerts'
+                  ? alertsEnabled
+                  : option.key === 'orderSound'
+                    ? soundEnabled
+                    : preferences[option.key]
               }
               onChange={(event) => {
-                if (option.key === 'orderSound') {
+                if (option.key === 'newOrderAlerts') {
+                  setAlertsEnabled(event.target.checked)
+                } else if (option.key === 'orderSound') {
                   setSoundEnabled(event.target.checked)
                 } else {
                   onChange(option.key, event.target.checked)

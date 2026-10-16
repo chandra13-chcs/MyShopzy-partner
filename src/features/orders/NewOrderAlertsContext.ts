@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-export type AlertReason = 'disabled' | 'blocked' | 'unavailable'
+export type AlertReason = 'played' | 'disabled' | 'blocked' | 'unavailable'
 
 export interface PendingOrderAlert {
   orderId: string
@@ -8,8 +8,10 @@ export interface PendingOrderAlert {
 }
 
 export interface NewOrderAlertsValue {
+  alertsEnabled: boolean
   alerts: PendingOrderAlert[]
   dismissAlert: (orderId: string) => void
+  setAlertsEnabled: (enabled: boolean) => void
   soundEnabled: boolean
   setSoundEnabled: (enabled: boolean) => void
 }

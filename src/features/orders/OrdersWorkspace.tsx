@@ -3,6 +3,7 @@ import { OrderDetails } from './OrderDetails'
 import { OrderList } from './OrderList'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { normalizeDemoOrders } from './orderState'
+import { useNewOrderAlerts } from './NewOrderAlertsContext'
 import type { DemoOrder, OrderStatus, RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import type { TranslationKey } from '../../i18n/translations'
@@ -30,22 +31,38 @@ function matchesFilter(order: DemoOrder, filter: OrderFilter) {
 }
 
 interface OrdersWorkspaceProps {
+  onSimulateOrder: () => void
   onStatusChange: (orderId: string, status: OrderStatus) => void
   onDeliveryStatusChange: (orderId: string, status: RiderStatus) => void
+  onSelectOrder: (orderId: string | undefined) => void
   orders: DemoOrder[]
+  selectedOrderId?: string
 }
 
 export default function OrdersWorkspace({
+  onSimulateOrder,
   onStatusChange,
   onDeliveryStatusChange,
+  onSelectOrder,
   orders,
+  selectedOrderId,
 }: OrdersWorkspaceProps) {
   const { t } = useLanguage()
+  const { alertsEnabled, setAlertsEnabled } = useNewOrderAlerts()
   const [filter, setFilter] = useState<OrderFilter>('ALL')
   const [search, setSearch] = useState('')
-  const [selectedOrderId, setSelectedOrderId] = useState<string>()
   const safeOrders = useMemo(() => normalizeDemoOrders(orders), [orders])
   const newOrderCount = safeOrders.filter((order) => order.status === 'PENDING').length
+
+  function selectFilter(nextFilter: OrderFilter) {
+    if (nextFilter === 'PENDING') setSearch('')
+    setFilter(nextFilter)
+  }
+
+  function handleStatusChange(orderId: string, status: OrderStatus) {
+    onStatusChange(orderId, status)
+    if (status === 'REJECTED') setFilter('ALL')
+  }
 
   const visibleOrders = useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
@@ -80,7 +97,32 @@ export default function OrdersWorkspace({
           <h1>{t('orders.title')}</h1>
           <p className="page-description">{t('orders.description')}</p>
         </div>
-        <span className="demo-tag demo-tag-large">{t('orders.localDemo')}</span>
+        <div className="orders-page-actions">
+          <span className="demo-tag demo-tag-large">{t('orders.localDemo')}</span>
+          <button
+            aria-pressed={alertsEnabled}
+            className={`orders-alert-toggle${alertsEnabled ? ' is-enabled' : ''}`}
+            onClick={() => setAlertsEnabled(!alertsEnabled)}
+            type="button"
+          >
+            <span aria-hidden="true" className="orders-alert-indicator" />
+            {alertsEnabled
+              ? t('orders.alertsOn')
+              : t('orders.alertsOff')}
+          </button>
+          <button
+            className="orders-simulate-button"
+            onClick={() => {
+              setSearch('')
+              setFilter('PENDING')
+              onSimulateOrder()
+            }}
+            type="button"
+          >
+            <span aria-hidden="true">＋</span>
+            {t('orders.simulateOrder')}
+          </button>
+        </div>
       </div>
 
       {newOrderCount > 0 && (
@@ -100,7 +142,15 @@ export default function OrdersWorkspace({
             </strong>
             <p>{t('orders.pendingDescription')}</p>
           </div>
-          <span className="pending-summary-tag">{t('orders.newOrder')}</span>
+          <button
+            aria-label={t('orders.newOrdersRegion')}
+            aria-pressed={filter === 'PENDING'}
+            className="pending-summary-tag"
+            onClick={() => selectFilter('PENDING')}
+            type="button"
+          >
+            {t('orders.newOrder')}
+          </button>
         </section>
       )}
 
@@ -139,7 +189,7 @@ export default function OrdersWorkspace({
                 aria-selected={filter === item.value}
                 className={`orders-filter${filter === item.value ? ' is-active' : ''}`}
                 key={item.value}
-                onClick={() => setFilter(item.value)}
+                onClick={() => selectFilter(item.value)}
                 role="tab"
                 type="button"
               >
@@ -180,16 +230,16 @@ export default function OrdersWorkspace({
           <div className="orders-groups">
             {showActive && (
               <OrderList
-                onOpen={(order) => setSelectedOrderId(order.id)}
-                onStatusChange={onStatusChange}
+                onOpen={(order) => onSelectOrder(order.id)}
+                onStatusChange={handleStatusChange}
                 orders={activeOrders}
                 title={t('orders.activeGroup')}
               />
             )}
             {showHistory && (
               <OrderList
-                onOpen={(order) => setSelectedOrderId(order.id)}
-                onStatusChange={onStatusChange}
+                onOpen={(order) => onSelectOrder(order.id)}
+                onStatusChange={handleStatusChange}
                 orders={historyOrders}
                 title={t('orders.historyGroup')}
               />
@@ -200,9 +250,9 @@ export default function OrdersWorkspace({
 
       {selectedOrder && (
         <OrderDetails
-          onClose={() => setSelectedOrderId(undefined)}
+          onClose={() => onSelectOrder(undefined)}
           onDeliveryStatusChange={onDeliveryStatusChange}
-          onStatusChange={onStatusChange}
+          onStatusChange={handleStatusChange}
           order={selectedOrder}
         />
       )}

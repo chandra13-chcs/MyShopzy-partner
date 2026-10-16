@@ -35,6 +35,17 @@ export function LanguagePreference() {
             <span className="language-option-check">{t('settings.languageSelected')}</span>
           )}
         </button>
+        <button
+          aria-pressed={language === 'hi'}
+          className={`language-option${language === 'hi' ? ' is-selected' : ''}`}
+          onClick={() => setLanguage('hi')}
+          type="button"
+        >
+          <span>हिन्दी</span>
+          {language === 'hi' && (
+            <span className="language-option-check">{t('settings.languageSelected')}</span>
+          )}
+        </button>
       </div>
     </section>
   )

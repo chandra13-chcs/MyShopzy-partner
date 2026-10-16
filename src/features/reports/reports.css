@@ -722,3 +722,332 @@
     font-size: 8px;
   }
 }
+
+.shop-overview {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.shop-overview-heading,
+.shop-inventory-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shop-overview-heading h2 {
+  margin: 0;
+  color: #20334a;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+.shop-overview-heading p:not(.page-eyebrow) {
+  margin: 5px 0 0;
+  color: #748194;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.shop-overview-heading .page-eyebrow {
+  margin: 0 0 7px;
+}
+
+.shop-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.shop-overview-stat {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid #dbe9df;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #fff, #f3faf5);
+  box-shadow: inset 0 1px #fff, 0 4px 11px rgb(31 73 47 / 5%);
+}
+
+.shop-overview-stat > span {
+  color: #647468;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.shop-overview-stat strong {
+  color: #176b43;
+  font-size: 23px;
+  letter-spacing: -0.04em;
+}
+
+.shop-overview-stat small {
+  color: #87938a;
+  font-size: 9px;
+}
+
+.shop-overview-stat.is-out {
+  border-color: #f0dadd;
+  background: linear-gradient(145deg, #fff, #fff5f6);
+  box-shadow: inset 0 1px #fff, 0 4px 11px rgb(160 57 72 / 5%);
+}
+
+.shop-overview-stat.is-out strong {
+  color: #ad4050;
+}
+
+.shop-overview-stat.is-low {
+  border-color: #f0e2c7;
+  background: linear-gradient(145deg, #fff, #fff9ed);
+  box-shadow: inset 0 1px #fff, 0 4px 11px rgb(151 105 28 / 5%);
+}
+
+.shop-overview-stat.is-low strong {
+  color: #a16a13;
+}
+
+.shop-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.shop-inventory-panel,
+.shop-history-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e2e9e4;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #fff, #fbfdfb);
+  box-shadow: 0 5px 15px rgb(31 73 47 / 5%), inset 0 1px #fff;
+}
+
+.shop-inventory-heading {
+  min-height: 61px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf1ee;
+}
+
+.shop-inventory-heading h3 {
+  margin: 0;
+  color: #2a3b4f;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.shop-inventory-heading p {
+  margin: 4px 0 0;
+  color: #879184;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.shop-inventory-count {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border: 1px solid #dbe9df;
+  border-radius: 9px;
+  background: #eff7f1;
+  color: #176b43;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.shop-inventory-count.is-out {
+  border-color: #f0dadd;
+  background: #fff0f2;
+  color: #ad4050;
+}
+
+.shop-inventory-count.is-low {
+  border-color: #f0e2c7;
+  background: #fff6e6;
+  color: #a16a13;
+}
+
+.shop-inventory-list {
+  display: grid;
+  margin: 0;
+  padding: 2px 14px;
+  list-style: none;
+}
+
+.shop-inventory-list li {
+  display: flex;
+  min-width: 0;
+  min-height: 50px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  border-bottom: 1px solid #f0f2f0;
+}
+
+.shop-inventory-list li:last-child {
+  border-bottom: 0;
+}
+
+.shop-inventory-list li > span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.shop-inventory-list strong {
+  overflow: hidden;
+  color: #35445a;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-inventory-list small {
+  color: #8a94a0;
+  font-size: 9px;
+}
+
+.shop-stock-badge {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #fff5e4;
+  color: #966111;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.shop-stock-badge.is-out {
+  background: #fff0f2;
+  color: #a23c4d;
+}
+
+.shop-overview-empty {
+  margin: 0;
+  padding: 17px 14px;
+  color: #7b8794;
+  font-size: 10px;
+}
+
+.shop-history-panel .shop-inventory-heading {
+  min-height: 66px;
+}
+
+.shop-history-table-wrap {
+  overflow-x: auto;
+}
+
+.shop-history-table {
+  width: 100%;
+  min-width: 740px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.shop-history-table th {
+  height: 36px;
+  padding: 0 12px;
+  background: #f8faf8;
+  color: #7e8a80;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.shop-history-table td {
+  height: 42px;
+  padding: 7px 12px;
+  border-top: 1px solid #edf1ee;
+  color: #5f6c7d;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.shop-history-order-id {
+  color: #304259 !important;
+  font-weight: 750;
+}
+
+.shop-history-items {
+  overflow: hidden;
+  max-width: 190px;
+  text-overflow: ellipsis;
+}
+
+.shop-history-status {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #edf6ef;
+  color: #33704a;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.shop-history-status.status-pending {
+  background: #fff2d8;
+  color: #8a5b0b;
+}
+
+.shop-history-status.status-accepted,
+.shop-history-status.status-preparing {
+  background: #f0eaff;
+  color: #6746a2;
+}
+
+.shop-history-status.status-ready_for_pickup {
+  background: #e5f5f4;
+  color: #26736d;
+}
+
+.shop-history-status.status-rejected {
+  background: #ffe7e9;
+  color: #a62e45;
+}
+
+@media (max-width: 720px) {
+  .shop-overview {
+    gap: 12px;
+  }
+
+  .shop-overview-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shop-overview-heading h2 {
+    font-size: 18px;
+  }
+
+  .shop-overview-stats {
+    gap: 7px;
+  }
+
+  .shop-overview-stat {
+    gap: 4px;
+    padding: 11px 9px;
+  }
+
+  .shop-overview-stat > span {
+    font-size: 9px;
+  }
+
+  .shop-overview-stat strong {
+    font-size: 20px;
+  }
+
+  .shop-overview-stat small {
+    font-size: 8px;
+    line-height: 1.35;
+  }
+
+  .shop-inventory-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

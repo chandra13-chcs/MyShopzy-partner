@@ -10,6 +10,70 @@ import type {
   TrackedOrderStatus,
 } from './types'
 
+const orderTimerStoragePrefix = 'myshopzy.orderTimers.startedAt.'
+const legacyPendingTimerStoragePrefix = 'myshopzy.orderTimers.pendingSince.'
+const staleOrderTimerMs = 24 * 60 * 60 * 1000
+
+function getOrderTimeToday(orderedAt?: string) {
+  if (!orderedAt) return undefined
+  const match = orderedAt.match(/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/i)
+  if (!match) return undefined
+
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (hour < 1 || hour > 12 || minute > 59) return undefined
+
+  const now = new Date()
+  const hours = (hour % 12) + (match[3].toLocaleUpperCase() === 'PM' ? 12 : 0)
+  const startedAt = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    hours,
+    minute,
+  ).getTime()
+  return startedAt <= now.getTime() ? startedAt : undefined
+}
+
+export function getOrderTimerStart(orderId: string, orderedAt?: string) {
+  const key = `${orderTimerStoragePrefix}${orderId}`
+  try {
+    const now = Date.now()
+    const saved = window.localStorage.getItem(key)
+    const parsed = saved === null ? Number.NaN : Number(saved)
+    if (
+      Number.isFinite(parsed) &&
+      parsed > 0 &&
+      parsed <= now &&
+      now - parsed < staleOrderTimerMs
+    ) {
+      return parsed
+    }
+
+    const legacyKey = `${legacyPendingTimerStoragePrefix}${orderId}`
+    const legacySaved = window.localStorage.getItem(legacyKey)
+    const legacyStartedAt = legacySaved === null ? Number.NaN : Number(legacySaved)
+    if (
+      Number.isFinite(legacyStartedAt) &&
+      legacyStartedAt > 0 &&
+      legacyStartedAt <= now &&
+      now - legacyStartedAt < staleOrderTimerMs
+    ) {
+      window.localStorage.setItem(key, String(legacyStartedAt))
+      window.localStorage.removeItem(legacyKey)
+      return legacyStartedAt
+    }
+
+    const startedAt = getOrderTimeToday(orderedAt) ?? now
+    window.localStorage.setItem(key, String(startedAt))
+    if (legacySaved !== null) window.localStorage.removeItem(legacyKey)
+    return startedAt
+  } catch (error) {
+    console.warn(`Could not persist the timer for order ${orderId}.`, error)
+    return getOrderTimeToday(orderedAt) ?? Date.now()
+  }
+}
+
 const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
   PENDING: ['ACCEPTED', 'REJECTED'],
   ACCEPTED: ['PREPARING'],
