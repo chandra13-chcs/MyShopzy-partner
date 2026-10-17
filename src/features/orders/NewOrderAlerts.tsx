@@ -15,7 +15,7 @@ const soundPreferenceKey = 'myshopzy.orderSound.enabled'
 const alertsPreferenceKey = 'myshopzy.orderAlerts.enabled'
 const alertedOrderIdsKey = 'myshopzy.orderSound.alertedOrderIds'
 const soundSource = '/sounds/new-order.mp3'
-const newOrderSoundDurationMs = 7_000
+const newOrderSoundDurationMs = 20_000
 
 function requestSystemNotificationPermission() {
   if (!('Notification' in window) || Notification.permission !== 'default') {
@@ -428,6 +428,8 @@ export function NewOrderAlertsProvider({
   }
 
   function dismissAlert(orderId: string) {
+    stopOrderSound(orderId, activeAudio.current, audioTimeouts.current)
+    blockedAudioOrderIds.current.delete(orderId)
     setAlerts((current) =>
       current.filter((alert) => alert.orderId !== orderId),
     )

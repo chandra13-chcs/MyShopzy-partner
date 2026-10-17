@@ -20,7 +20,8 @@ const filters: { label: TranslationKey; value: OrderFilter }[] = [
   { label: 'orders.rejected', value: 'REJECTED' },
 ]
 
-const historyStatuses: OrderStatus[] = ['COMPLETED', 'REJECTED']
+const completedHistoryStatuses: OrderStatus[] = ['COMPLETED']
+const rejectedHistoryStatuses: OrderStatus[] = ['REJECTED']
 
 function matchesFilter(order: DemoOrder, filter: OrderFilter) {
   if (filter === 'ALL') return true
@@ -80,13 +81,23 @@ export default function OrdersWorkspace({
   }, [filter, safeOrders, search])
 
   const activeOrders = visibleOrders.filter(
-    (order) => !historyStatuses.includes(order.status),
+    (order) =>
+      !completedHistoryStatuses.includes(order.status) &&
+      !rejectedHistoryStatuses.includes(order.status),
   )
-  const historyOrders = visibleOrders.filter(
-    (order) => historyStatuses.includes(order.status),
+  const completedHistoryOrders = visibleOrders.filter(
+    (order) => completedHistoryStatuses.includes(order.status),
   )
-  const showActive = filter === 'ALL' || !historyStatuses.includes(filter)
-  const showHistory = filter === 'ALL' || historyStatuses.includes(filter)
+  const rejectedHistoryOrders = visibleOrders.filter(
+    (order) => rejectedHistoryStatuses.includes(order.status),
+  )
+  const showActive =
+    filter === 'ALL' ||
+    (!completedHistoryStatuses.includes(filter) &&
+      !rejectedHistoryStatuses.includes(filter))
+  const showHistory = filter === 'ALL' || completedHistoryStatuses.includes(filter)
+  const showRejectedHistory =
+    filter === 'ALL' || rejectedHistoryStatuses.includes(filter)
   const selectedOrder = safeOrders.find((order) => order.id === selectedOrderId)
 
   return (
@@ -227,7 +238,9 @@ export default function OrdersWorkspace({
             <p>{t('orders.noOrdersDescription')}</p>
           </div>
         ) : (
-          <div className="orders-groups">
+          <div
+            className={`orders-groups${filter === 'ALL' ? ' has-rejected-column' : ''}`}
+          >
             {showActive && (
               <OrderList
                 onOpen={(order) => onSelectOrder(order.id)}
@@ -240,8 +253,16 @@ export default function OrdersWorkspace({
               <OrderList
                 onOpen={(order) => onSelectOrder(order.id)}
                 onStatusChange={handleStatusChange}
-                orders={historyOrders}
+                orders={completedHistoryOrders}
                 title={t('orders.historyGroup')}
+              />
+            )}
+            {showRejectedHistory && (
+              <OrderList
+                onOpen={(order) => onSelectOrder(order.id)}
+                onStatusChange={handleStatusChange}
+                orders={rejectedHistoryOrders}
+                title={t('orders.rejectedGroup')}
               />
             )}
           </div>

@@ -190,6 +190,10 @@
   padding: 0 14px 14px;
 }
 
+.orders-groups.has-rejected-column {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .orders-group {
   min-width: 0;
   border: 1px solid #e9edf3;
@@ -1444,12 +1448,20 @@
 }
 
 @media (max-width: 900px) {
+  .orders-groups.has-rejected-column {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .orders-list {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 720px) {
+  .orders-groups.has-rejected-column {
+    grid-template-columns: 1fr;
+  }
+
   .orders-workspace {
     gap: 15px;
   }
