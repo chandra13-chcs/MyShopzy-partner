@@ -144,6 +144,32 @@
   font-size: 11px;
 }
 
+.category-suggestions {
+  display: grid;
+  gap: 11px;
+  padding: 14px 17px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.category-suggestions-heading h3 {
+  margin: 0;
+  color: #27344b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.category-suggestions-heading p {
+  margin: 4px 0 0;
+  color: #818c9e;
+  font-size: 11px;
+}
+
+.category-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .product-filter select {
   min-height: 34px;
   padding: 0 27px 0 10px;

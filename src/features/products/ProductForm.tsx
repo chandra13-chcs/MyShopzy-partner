@@ -1,8 +1,13 @@
 import { useState, type FormEvent } from 'react'
+import type { BusinessType } from '../store/types'
 import { Dialog } from './Dialog'
+import { unitSuggestionsByBusinessType } from './demoData'
 import type { Product, ProductCategory, ProductDraft } from './types'
 
+const customUnitOption = '__custom_unit__'
+
 interface ProductFormProps {
+  businessType: BusinessType
   categories: ProductCategory[]
   product?: Product
   onCancel: () => void
@@ -10,14 +15,41 @@ interface ProductFormProps {
 }
 
 export function ProductForm({
+  businessType,
   categories,
   product,
   onCancel,
   onSave,
 }: ProductFormProps) {
+  const suggestedUnits = unitSuggestionsByBusinessType[businessType].filter(
+    (unit, index, units) =>
+      units.findIndex(
+        (candidate) => candidate.trim().toLowerCase() === unit.trim().toLowerCase(),
+      ) === index,
+  )
+  const initialUnit = product?.unit ?? ''
   const [name, setName] = useState(product?.name ?? '')
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? '')
   const [price, setPrice] = useState(product ? String(product.price) : '')
+  const [unitChoice, setUnitChoice] = useState(() => {
+    if (!initialUnit) return ''
+    return suggestedUnits.some(
+      (unit) => unit.toLowerCase() === initialUnit.toLowerCase(),
+    )
+      ? initialUnit
+      : customUnitOption
+  })
+  const [customUnit, setCustomUnit] = useState(() => {
+    if (
+      initialUnit &&
+      !suggestedUnits.some(
+        (unit) => unit.toLowerCase() === initialUnit.toLowerCase(),
+      )
+    ) {
+      return initialUnit
+    }
+    return ''
+  })
   const [description, setDescription] = useState(product?.description ?? '')
   const [available, setAvailable] = useState(product?.available ?? true)
   const [stockQuantity, setStockQuantity] = useState(
@@ -28,12 +60,31 @@ export function ProductForm({
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const title = product ? 'Edit product' : 'Add product'
+  const selectedSuggestedUnit = suggestedUnits.find(
+    (unit) => unit.toLowerCase() === unitChoice.toLowerCase(),
+  )
+  const unitOptions = suggestedUnits.map((unit) => ({
+    value:
+      selectedSuggestedUnit === unit && unitChoice !== customUnitOption
+        ? unitChoice
+        : unit,
+    label: unit,
+  }))
+  if (
+    unitChoice &&
+    unitChoice !== customUnitOption &&
+    !selectedSuggestedUnit
+  ) {
+    unitOptions.push({ value: unitChoice, label: unitChoice })
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const parsedPrice = Number(price)
     const parsedStockQuantity = Number(stockQuantity)
     const parsedRestockThreshold = Number(restockThreshold)
+    const savedUnit =
+      unitChoice === customUnitOption ? customUnit.trim() : unitChoice.trim()
     const nextErrors: Record<string, string> = {}
 
     if (!name.trim()) nextErrors.name = 'Enter a product name.'
@@ -55,6 +106,9 @@ export function ProductForm({
     ) {
       nextErrors.restockThreshold = 'Enter a whole number of 1 or more.'
     }
+    if (unitChoice === customUnitOption && !savedUnit) {
+      nextErrors.unit = 'Enter a custom unit or choose a suggestion.'
+    }
 
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
@@ -63,6 +117,7 @@ export function ProductForm({
       name: name.trim(),
       categoryId,
       price: parsedPrice,
+      ...(savedUnit ? { unit: savedUnit } : {}),
       description: description.trim(),
       available: available && parsedStockQuantity > 0,
       stockQuantity: parsedStockQuantity,
@@ -94,7 +149,7 @@ export function ProductForm({
             aria-invalid={Boolean(errors.name)}
             autoFocus
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Chicken Biryani"
+            placeholder="Enter product name"
             value={name}
           />
           {errors.name && (
@@ -145,6 +200,41 @@ export function ProductForm({
               </span>
             )}
           </label>
+        </div>
+
+        <div className="products-form-row">
+          <label className="products-field">
+            <span>Unit (optional)</span>
+            <select
+              onChange={(event) => setUnitChoice(event.target.value)}
+              value={unitChoice}
+            >
+              <option value="">No unit</option>
+              {unitOptions.map((unit) => (
+                <option key={unit.value} value={unit.value}>
+                  {unit.label}
+                </option>
+              ))}
+              <option value={customUnitOption}>Custom unit</option>
+            </select>
+          </label>
+          {unitChoice === customUnitOption && (
+            <label className="products-field">
+              <span>Custom unit</span>
+              <input
+                aria-describedby={errors.unit ? 'product-unit-error' : undefined}
+                aria-invalid={Boolean(errors.unit)}
+                onChange={(event) => setCustomUnit(event.target.value)}
+                placeholder="e.g. 500 ml"
+                value={customUnit}
+              />
+              {errors.unit && (
+                <span className="products-field-error" id="product-unit-error">
+                  {errors.unit}
+                </span>
+              )}
+            </label>
+          )}
         </div>
 
         <label className="products-field">

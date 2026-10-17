@@ -47,7 +47,7 @@ export function CategoryForm({ category, onCancel, onSave }: CategoryFormProps) 
             aria-invalid={Boolean(error)}
             autoFocus
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Main Course"
+            placeholder="Enter category name"
             value={name}
           />
           {error && (

@@ -17,6 +17,12 @@ function AvailabilityBadge({ available }: { available: boolean }) {
   )
 }
 
+function formatProductPrice(product: Product) {
+  const price = `₹${product.price.toLocaleString('en-IN')}`
+  const unit = product.unit?.trim()
+  return unit ? `${price} / ${unit}` : price
+}
+
 export function ProductList({
   categories,
   onAvailabilityChange,
@@ -50,7 +56,7 @@ export function ProductList({
                   <span className="product-description-cell">{product.description || '—'}</span>
                 </td>
                 <td>{categoryName(product.categoryId)}</td>
-                <td className="product-price">₹{product.price.toLocaleString('en-IN')}</td>
+                <td className="product-price">{formatProductPrice(product)}</td>
                 <td>
                   <span className={`product-stock-value${product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
                     {product.stockQuantity}
@@ -110,7 +116,7 @@ export function ProductList({
                 <h3>{product.name}</h3>
                 <p>{categoryName(product.categoryId)}</p>
               </div>
-              <strong>₹{product.price.toLocaleString('en-IN')}</strong>
+              <strong>{formatProductPrice(product)}</strong>
             </div>
             <p className="product-card-description">
               {product.description || 'No description provided.'}

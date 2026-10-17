@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { businessTypes } from './storeDemoData'
 import type { StoreProfile as StoreProfileData } from './types'
 
 interface StoreProfileProps {
@@ -32,7 +33,6 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
     onSave({
       ...draft,
       businessName: draft.businessName.trim(),
-      businessType: 'Restaurant',
       phone: draft.phone.trim(),
       address: draft.address.trim(),
       description: draft.description.trim(),
@@ -80,11 +80,22 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
           </label>
           <label className="store-field">
             <span>Business type</span>
-            <input
+            <select
               aria-label="Business Type"
-              readOnly
-              value="Restaurant"
-            />
+              onChange={(event) => {
+                const businessType = businessTypes.find(
+                  (type) => type === event.target.value,
+                )
+                if (businessType) updateField('businessType', businessType)
+              }}
+              value={draft.businessType}
+            >
+              {businessTypes.map((businessType) => (
+                <option key={businessType} value={businessType}>
+                  {businessType}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="store-field">
             <span>Phone number <b>*</b></span>

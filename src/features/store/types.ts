@@ -1,9 +1,10 @@
 export type BusinessType =
   | 'Restaurant'
-  | 'Grocery / Local Store'
-  | 'Meat'
-  | 'Bakery'
+  | 'Meat Shop'
   | 'Fruits & Vegetables'
+  | 'Bakery'
+  | 'Sweets Shop'
+  | 'Local Store / Grocery'
 
 export type StoreStatus = 'open' | 'closed'
 

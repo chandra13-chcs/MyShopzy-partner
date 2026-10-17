@@ -10,30 +10,72 @@ import {
 } from '../features/orders/orderState'
 import type { DemoOrder, OrderStatus, RiderStatus } from '../features/orders/types'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
-import { initialProducts } from '../features/products/demoData'
-import type { Product } from '../features/products/types'
+import { initialCatalogs } from '../features/products/demoData'
+import type { Product, ProductCategory } from '../features/products/types'
 import ReportsWorkspace from '../features/reports/ReportsWorkspace'
 import SettingsWorkspace from '../features/settings/SettingsWorkspace'
 import StoreWorkspace from '../features/store/StoreWorkspace'
-import { initialOperatingHours, initialStoreProfile } from '../features/store/storeDemoData'
-import type { StoreProfile } from '../features/store/types'
+import {
+  businessTypes,
+  initialOperatingHours,
+  initialStoreProfile,
+} from '../features/store/storeDemoData'
+import type { BusinessType, StoreProfile } from '../features/store/types'
 import DashboardPage from '../pages/DashboardPage'
 import LoginPage from '../pages/LoginPage'
 import MorePage from '../pages/MorePage'
 import { LanguageProvider } from '../i18n/LanguageProvider'
 import { resolveRoute, type AppRoute } from './routes'
 
+const businessTypeStorageKey = 'myshopzy.businessType'
+
+function readSavedBusinessType(): BusinessType {
+  try {
+    const savedType = window.localStorage.getItem(businessTypeStorageKey)
+    if (savedType === 'Grocery / Local Store') return 'Local Store / Grocery'
+    if (savedType === 'Meat') return 'Meat Shop'
+    return businessTypes.find((businessType) => businessType === savedType)
+      ?? initialStoreProfile.businessType
+  } catch (error) {
+    console.warn('Could not read the saved business type.', error)
+    return initialStoreProfile.businessType
+  }
+}
+
+function copyCatalog(businessType: BusinessType) {
+  const catalog = initialCatalogs[businessType]
+  return {
+    categories: catalog.categories.map((category) => ({ ...category })),
+    products: catalog.products.map((product) => ({ ...product })),
+  }
+}
+
+function createCatalogState() {
+  return {
+    Restaurant: copyCatalog('Restaurant'),
+    'Meat Shop': copyCatalog('Meat Shop'),
+    'Fruits & Vegetables': copyCatalog('Fruits & Vegetables'),
+    Bakery: copyCatalog('Bakery'),
+    'Sweets Shop': copyCatalog('Sweets Shop'),
+    'Local Store / Grocery': copyCatalog('Local Store / Grocery'),
+  }
+}
+
 function App() {
   const [route, setRoute] = useState<AppRoute>(() =>
     resolveRoute(window.location.pathname),
   )
   const [storeOpen, setStoreOpen] = useState(true)
-  const [storeProfile, setStoreProfile] = useState(initialStoreProfile)
+  const [storeProfile, setStoreProfile] = useState(() => ({
+    ...initialStoreProfile,
+    businessType: readSavedBusinessType(),
+  }))
   const [operatingHours, setOperatingHours] = useState(initialOperatingHours)
   const [orders, setOrders] = useState(() => normalizeDemoOrders(initialOrders))
-  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [catalogs, setCatalogs] = useState(createCatalogState)
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
   const safeOrders = normalizeDemoOrders(orders)
+  const activeCatalog = catalogs[storeProfile.businessType]
 
   useEffect(() => {
     function syncRoute() {
@@ -44,6 +86,17 @@ function App() {
     window.addEventListener('popstate', syncRoute)
     return () => window.removeEventListener('popstate', syncRoute)
   }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        businessTypeStorageKey,
+        storeProfile.businessType,
+      )
+    } catch (error) {
+      console.warn('Could not save the selected business type.', error)
+    }
+  }, [storeProfile.businessType])
 
   function navigate(path: string) {
     setSelectedOrderId(undefined)
@@ -139,8 +192,27 @@ function App() {
   } else if (route.path === '/products') {
     page = (
       <ProductsWorkspace
-        onProductsChange={setProducts}
-        products={products}
+        businessType={storeProfile.businessType}
+        categories={activeCatalog.categories}
+        onCategoriesChange={(update: (current: ProductCategory[]) => ProductCategory[]) =>
+          setCatalogs((current) => ({
+            ...current,
+            [storeProfile.businessType]: {
+              ...current[storeProfile.businessType],
+              categories: update(current[storeProfile.businessType].categories),
+            },
+          }))
+        }
+        onProductsChange={(update: (current: Product[]) => Product[]) =>
+          setCatalogs((current) => ({
+            ...current,
+            [storeProfile.businessType]: {
+              ...current[storeProfile.businessType],
+              products: update(current[storeProfile.businessType].products),
+            },
+          }))
+        }
+        products={activeCatalog.products}
       />
     )
   } else if (route.path === '/store') {
@@ -159,7 +231,7 @@ function App() {
       <ReportsWorkspace
         onNavigate={navigate}
         orders={safeOrders}
-        products={products}
+        products={activeCatalog.products}
       />
     )
   } else if (route.path === '/settings') {

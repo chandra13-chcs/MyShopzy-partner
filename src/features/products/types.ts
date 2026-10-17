@@ -8,6 +8,7 @@ export interface Product {
   name: string
   categoryId: string
   price: number
+  unit?: string
   description: string
   available: boolean
   stockQuantity: number

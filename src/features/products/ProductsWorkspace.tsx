@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { CategoryForm } from './CategoryForm'
 import { CategoryList } from './CategoryList'
 import { Dialog } from './Dialog'
-import { initialCategories } from './demoData'
+import {
+  categorySuggestionsByBusinessType,
+} from './demoData'
 import { ProductForm } from './ProductForm'
 import { ProductList } from './ProductList'
+import type { BusinessType } from '../store/types'
 import type {
   CategoryDraft,
   Product,
@@ -17,7 +20,10 @@ type WorkspaceTab = 'products' | 'categories'
 type ProductFilter = 'all' | 'available' | 'out-of-stock'
 
 interface ProductsWorkspaceProps {
+  businessType: BusinessType
+  categories: ProductCategory[]
   products: Product[]
+  onCategoriesChange: (update: (current: ProductCategory[]) => ProductCategory[]) => void
   onProductsChange: (update: (current: Product[]) => Product[]) => void
 }
 
@@ -26,10 +32,12 @@ function isProductFilter(value: string): value is ProductFilter {
 }
 
 export default function ProductsWorkspace({
+  businessType,
+  categories,
   products,
+  onCategoriesChange,
   onProductsChange,
 }: ProductsWorkspaceProps) {
-  const [categories, setCategories] = useState(initialCategories)
   const [tab, setTab] = useState<WorkspaceTab>('products')
   const [filter, setFilter] = useState<ProductFilter>('all')
   const [productToEdit, setProductToEdit] = useState<Product>()
@@ -44,6 +52,13 @@ export default function ProductsWorkspace({
     if (filter === 'out-of-stock') return !product.available
     return true
   })
+  const suggestedCategories = categorySuggestionsByBusinessType[businessType].filter(
+    (suggestion) =>
+      !categories.some(
+        (category) =>
+          category.name.trim().toLowerCase() === suggestion.toLowerCase(),
+      ),
+  )
 
   function saveProduct(draft: ProductDraft) {
     if (productToEdit) {
@@ -78,7 +93,7 @@ export default function ProductsWorkspace({
 
   function saveCategory(draft: CategoryDraft) {
     if (categoryToEdit) {
-      setCategories((current) =>
+      onCategoriesChange((current) =>
         current.map((category) =>
           category.id === categoryToEdit.id
             ? { ...category, name: draft.name }
@@ -87,9 +102,20 @@ export default function ProductsWorkspace({
       )
     } else {
       const id = `category-${Date.now()}`
-      setCategories((current) => [...current, { id, name: draft.name }])
+      onCategoriesChange((current) => [...current, { id, name: draft.name }])
     }
     closeCategoryForm()
+  }
+
+  function addSuggestedCategory(name: string) {
+    onCategoriesChange((current) => {
+      const alreadyExists = current.some(
+        (category) =>
+          category.name.trim().toLowerCase() === name.toLowerCase(),
+      )
+      if (alreadyExists) return current
+      return [...current, { id: `category-${Date.now()}`, name }]
+    })
   }
 
   function closeCategoryForm() {
@@ -119,7 +145,7 @@ export default function ProductsWorkspace({
     if (products.some((product) => product.categoryId === categoryToDelete.id)) {
       return
     }
-    setCategories((current) =>
+    onCategoriesChange((current) =>
       current.filter((category) => category.id !== categoryToDelete.id),
     )
     setCategoryToDelete(undefined)
@@ -139,7 +165,8 @@ export default function ProductsWorkspace({
           <p className="page-eyebrow">Catalog</p>
           <h1>Products</h1>
           <p className="page-description">
-            Manage the products and categories in your store.
+            Manage products and categories for {businessType}. Suggestions and
+            product options follow this business type.
           </p>
         </div>
         <span className="demo-tag demo-tag-large">LOCAL DEMO DATA</span>
@@ -231,6 +258,32 @@ export default function ProductsWorkspace({
             </div>
             <span className="category-count">{categories.length} categories</span>
           </div>
+          {suggestedCategories.length > 0 && (
+            <section
+              aria-labelledby="category-suggestions-title"
+              className="category-suggestions"
+            >
+              <div className="category-suggestions-heading">
+                <h3 id="category-suggestions-title">
+                  Suggested for {businessType}
+                </h3>
+                <p>Add a suggestion to your categories.</p>
+              </div>
+              <div className="category-suggestion-list">
+                {suggestedCategories.map((suggestion) => (
+                  <button
+                    aria-label={`Add ${suggestion} category`}
+                    className="products-button products-button-secondary"
+                    key={suggestion}
+                    onClick={() => addSuggestedCategory(suggestion)}
+                    type="button"
+                  >
+                    <span aria-hidden="true">＋</span> {suggestion}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           <CategoryList
             categories={categories}
             onDelete={attemptDeleteCategory}
@@ -246,6 +299,7 @@ export default function ProductsWorkspace({
       {showProductForm && (
         <ProductForm
           categories={categories}
+          businessType={businessType}
           onCancel={closeProductForm}
           onSave={saveProduct}
           product={productToEdit}

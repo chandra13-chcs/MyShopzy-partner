@@ -2,10 +2,11 @@ import type { OperatingHours, StoreProfile } from './types'
 
 export const businessTypes = [
   'Restaurant',
-  'Grocery / Local Store',
-  'Meat',
-  'Bakery',
+  'Meat Shop',
   'Fruits & Vegetables',
+  'Bakery',
+  'Sweets Shop',
+  'Local Store / Grocery',
 ] as const
 
 export const initialStoreProfile: StoreProfile = {
