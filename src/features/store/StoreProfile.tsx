@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { businessTypes } from './storeDemoData'
+import { usePartnerConfig } from '../../services/api/PartnerConfigContext'
 import type { StoreProfile as StoreProfileData } from './types'
 
 interface StoreProfileProps {
@@ -8,6 +8,7 @@ interface StoreProfileProps {
 }
 
 export function StoreProfile({ onSave, profile }: StoreProfileProps) {
+  const { config } = usePartnerConfig()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(profile)
   const [error, setError] = useState('')
@@ -78,25 +79,10 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
               value={draft.businessName}
             />
           </label>
-          <label className="store-field">
+          <div className="store-field">
             <span>Business type</span>
-            <select
-              aria-label="Business Type"
-              onChange={(event) => {
-                const businessType = businessTypes.find(
-                  (type) => type === event.target.value,
-                )
-                if (businessType) updateField('businessType', businessType)
-              }}
-              value={draft.businessType}
-            >
-              {businessTypes.map((businessType) => (
-                <option key={businessType} value={businessType}>
-                  {businessType}
-                </option>
-              ))}
-            </select>
-          </label>
+            <strong>{config?.profile.label}</strong>
+          </div>
           <label className="store-field">
             <span>Phone number <b>*</b></span>
             <input
@@ -149,7 +135,7 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
           </div>
           <div>
             <dt>Business type</dt>
-            <dd>{profile.businessType}</dd>
+            <dd>{config?.profile.label}</dd>
           </div>
           <div>
             <dt>Phone number</dt>

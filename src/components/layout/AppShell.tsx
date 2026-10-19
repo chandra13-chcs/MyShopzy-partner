@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { routes } from '../../app/routes'
+import type { AppRoute } from '../../app/routes'
 import { useLanguage } from '../../i18n/LanguageContext'
 import type { TranslationKey } from '../../i18n/translations'
 import { useNewOrderAlerts } from '../../features/orders/NewOrderAlertsContext'
@@ -8,14 +8,12 @@ interface AppShellProps {
   activePath: string
   businessName: string
   children: ReactNode
+  navigation: AppRoute[]
   onNavigate: (path: string) => void
+  onLogout: () => void
   onOpenOrder: (orderId: string) => void
   storeOpen: boolean
 }
-
-const mobileRoutes = routes.filter((route) =>
-  ['/', '/orders', '/products', '/more'].includes(route.path),
-)
 
 const routeTranslationKeys: Record<string, TranslationKey> = {
   '/': 'nav.home',
@@ -59,6 +57,12 @@ export function NavigationIcon({ path }: { path: string }) {
         <path d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V4a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2.9Z" />
       </>
     ),
+    '/logout': (
+      <>
+        <path d="M10 17l5-5-5-5M15 12H3" />
+        <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
+      </>
+    ),
     '/more': (
       <>
         <rect x="4" y="4" width="6" height="6" rx="1" />
@@ -89,7 +93,9 @@ export function AppShell({
   activePath,
   businessName,
   children,
+  navigation,
   onNavigate,
+  onLogout,
   onOpenOrder,
   storeOpen,
 }: AppShellProps) {
@@ -133,7 +139,7 @@ export function AppShell({
         </div>
         <p className="nav-heading">{t('nav.workspace')}</p>
         <nav className="side-nav">
-          {routes.filter((item) => item.path !== '/login').map((item) => (
+          {navigation.map((item) => (
             <a
               key={item.path}
               aria-current={activePath === item.path ? 'page' : undefined}
@@ -145,6 +151,17 @@ export function AppShell({
               <span>{t(routeTranslationKeys[item.path])}</span>
             </a>
           ))}
+          <a
+            className="nav-link"
+            href="/login"
+            onClick={(event) => {
+              event.preventDefault()
+              onLogout()
+            }}
+          >
+            <NavigationIcon path="/logout" />
+            <span>{t('auth.logout')}</span>
+          </a>
         </nav>
         <div className="sidebar-footer">
           <span className={`status-dot${storeOpen ? ' is-open' : ''}`} />
@@ -221,10 +238,10 @@ export function AppShell({
             </span>
           </div>
           <button
-            aria-label={t('nav.settings')}
+            aria-label={t('auth.logout')}
             className="profile-button"
-            onClick={() => onNavigate('/settings')}
-            title={t('nav.settings')}
+            onClick={onLogout}
+            title={t('auth.logout')}
             type="button"
           >
             <span aria-hidden="true">{businessName.slice(0, 1).toUpperCase()}</span>
@@ -235,7 +252,9 @@ export function AppShell({
       </div>
 
       <nav className="mobile-nav" aria-label={t('nav.mobileNavigation')}>
-        {mobileRoutes.map((item) => (
+        {navigation.filter((item) =>
+          ['/', '/orders', '/products', '/more'].includes(item.path),
+        ).map((item) => (
           <a
             key={item.path}
             aria-current={

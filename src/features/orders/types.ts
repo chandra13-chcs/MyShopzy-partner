@@ -19,16 +19,6 @@ export type TrackedOrderStatus = OrderStatus | RiderStatus
 export type PaymentMethod = 'UPI' | 'Cash on Delivery'
 export type PaymentStatus = 'PAID' | 'PAYMENT_DUE' | 'REFUNDED'
 
-export const orderStatusLabels: Record<OrderStatus, string> = {
-  PENDING: 'New Order',
-  ACCEPTED: 'Preparing Food',
-  PREPARING: 'Preparing Food',
-  READY_FOR_PICKUP: 'Ready for Pickup',
-  COMPLETED: 'Order Complete',
-  REJECTED: 'Rejected',
-  UNKNOWN: 'Status unavailable',
-}
-
 export interface OrderItem {
   productName: string
   quantity?: number

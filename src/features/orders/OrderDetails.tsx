@@ -3,6 +3,7 @@ import { OrderStatusBadge } from './OrderStatusBadge'
 import { formatCustomerPhone, normalizeDemoOrder } from './orderState'
 import type { DemoOrder, OrderStatus, RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
+import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 import {
   orderStatusTranslationKeys,
   riderStatusTranslationKeys,
@@ -65,6 +66,7 @@ export function OrderDetails({
   order: rawOrder,
 }: OrderDetailsProps) {
   const { t } = useLanguage()
+  const partnerLabel = usePartnerOrderStatusLabel()
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -323,7 +325,9 @@ export function OrderDetails({
                       {isComplete ? '✓' : ''}
                     </span>
                     <span className="order-timeline-copy">
-                      <strong>{t(orderStatusTranslationKeys[status])}</strong>
+                      <strong>
+                        {partnerLabel(status, t(orderStatusTranslationKeys[status]))}
+                      </strong>
                       <span className="order-timeline-owner">
                         {status === 'PENDING'
                           ? t('orders.customerActor')

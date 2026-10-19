@@ -3,6 +3,16 @@ import type { OrderStatus, RiderStatus } from '../features/orders/types'
 export type Language = 'en' | 'te' | 'hi'
 
 const en = {
+  'auth.eyebrow': 'Partner workspace',
+  'auth.loginTitle': 'Partner sign in',
+  'auth.loginDescription': 'Sign in securely with your MyShopzy Partner account.',
+  'auth.loginButton': 'Continue with Auth0',
+  'auth.logout': 'Sign out',
+  'auth.checking': 'Checking your sign-in...',
+  'config.loadingTitle': 'Loading your workspace',
+  'config.loadingDescription': 'Fetching your partner settings. This may take a moment.',
+  'config.errorTitle': 'Workspace configuration unavailable',
+  'config.retry': 'Try again',
   'nav.home': 'Home',
   'nav.orders': 'Orders',
   'nav.products': 'Products',
@@ -227,6 +237,16 @@ const en = {
 export type TranslationKey = keyof typeof en
 
 const te: Partial<Record<TranslationKey, string>> = {
+  'auth.eyebrow': 'పార్ట్నర్ కార్యస్థలం',
+  'auth.loginTitle': 'పార్ట్నర్ సైన్ ఇన్',
+  'auth.loginDescription': 'మీ MyShopzy Partner ఖాతాతో సురక్షితంగా సైన్ ఇన్ చేయండి.',
+  'auth.loginButton': 'Auth0తో కొనసాగండి',
+  'auth.logout': 'సైన్ అవుట్',
+  'auth.checking': 'మీ సైన్ ఇన్‌ను తనిఖీ చేస్తోంది...',
+  'config.loadingTitle': 'మీ కార్యస్థలం లోడ్ అవుతోంది',
+  'config.loadingDescription': 'మీ పార్ట్నర్ సెట్టింగ్‌లను పొందుతోంది. కొంత సమయం పట్టవచ్చు.',
+  'config.errorTitle': 'కార్యస్థల కాన్ఫిగరేషన్ అందుబాటులో లేదు',
+  'config.retry': 'మళ్లీ ప్రయత్నించండి',
   'nav.home': 'హోమ్',
   'nav.orders': 'ఆర్డర్లు',
   'nav.products': 'ఉత్పత్తులు',

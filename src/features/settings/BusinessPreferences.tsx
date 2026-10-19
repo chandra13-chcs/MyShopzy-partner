@@ -1,5 +1,6 @@
 import { getTodayHours } from '../store/timeUtils'
 import type { OperatingHours, StoreProfile } from '../store/types'
+import { usePartnerConfig } from '../../services/api/PartnerConfigContext'
 
 interface BusinessPreferencesProps {
   onToggleStore: () => void
@@ -14,6 +15,7 @@ export function BusinessPreferences({
   profile,
   storeOpen,
 }: BusinessPreferencesProps) {
+  const { config } = usePartnerConfig()
   return (
     <section className="settings-card" aria-labelledby="business-preferences-heading">
       <div className="settings-section-heading">
@@ -30,7 +32,7 @@ export function BusinessPreferences({
         </div>
         <div>
           <dt>Business type</dt>
-          <dd>{profile.businessType}</dd>
+          <dd>{config?.profile.label}</dd>
         </div>
         <div>
           <dt>Operating hours today</dt>

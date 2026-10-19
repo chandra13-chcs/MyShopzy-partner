@@ -1,17 +1,7 @@
 import type { OperatingHours, StoreProfile } from './types'
 
-export const businessTypes = [
-  'Restaurant',
-  'Meat Shop',
-  'Fruits & Vegetables',
-  'Bakery',
-  'Sweets Shop',
-  'Local Store / Grocery',
-] as const
-
-export const initialStoreProfile: StoreProfile = {
+export const initialStoreProfile: Omit<StoreProfile, 'partnerType'> = {
   businessName: 'Demo Business',
-  businessType: 'Restaurant',
   phone: '+91 98765 43210',
   address: 'Main Road, Mandapeta',
   description: 'Fresh products and quality service.',

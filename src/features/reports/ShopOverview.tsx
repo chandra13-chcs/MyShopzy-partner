@@ -4,6 +4,7 @@ import {
 } from '../../i18n/translations'
 import type { DemoOrder } from '../orders/types'
 import type { Product } from '../products/types'
+import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 
 interface ShopOverviewProps {
   onNavigate: (path: string) => void
@@ -21,6 +22,7 @@ export function ShopOverview({
   products,
 }: ShopOverviewProps) {
   const { t } = useLanguage()
+  const partnerLabel = usePartnerOrderStatusLabel()
   const outOfStock = products.filter(
     (product) => !product.available || product.stockQuantity === 0,
   )
@@ -159,7 +161,10 @@ export function ShopOverview({
                       <td className="shop-history-items">{orderItems(order)}</td>
                       <td>
                         <span className={`shop-history-status status-${order.status.toLowerCase()}`}>
-                          {t(orderStatusTranslationKeys[order.status])}
+                          {partnerLabel(
+                            order.status,
+                            t(orderStatusTranslationKeys[order.status]),
+                          )}
                         </span>
                       </td>
                       <td>{order.orderedAt || '—'}</td>

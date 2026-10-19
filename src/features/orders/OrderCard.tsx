@@ -7,6 +7,7 @@ import {
 } from './orderState'
 import type { DemoOrder, OrderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
+import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 import {
   orderStatusTranslationKeys,
   riderStatusTranslationKeys,
@@ -113,6 +114,7 @@ export function OrderCard({
   order: rawOrder,
 }: OrderCardProps) {
   const { t } = useLanguage()
+  const partnerLabel = usePartnerOrderStatusLabel()
   const order = normalizeDemoOrder(rawOrder)
 
   if (!order || order.status === 'UNKNOWN') {
@@ -154,7 +156,10 @@ export function OrderCard({
         aria-label={t('orders.viewOrder', {
           id: order.id,
           customer: order.customerName,
-          status: t(orderStatusTranslationKeys[order.status]),
+          status: partnerLabel(
+            order.status,
+            t(orderStatusTranslationKeys[order.status]),
+          ),
         })}
         className="order-card-main"
         onClick={() => onOpen(order)}
@@ -216,7 +221,9 @@ export function OrderCard({
                 className={`order-card-status-time status-time-${status.toLowerCase()}`}
                 key={status}
               >
-                <strong>{t(orderStatusTranslationKeys[status])}</strong>
+                <strong>
+                  {partnerLabel(status, t(orderStatusTranslationKeys[status]))}
+                </strong>
                 <time>{timestamp}</time>
               </span>
             ))}

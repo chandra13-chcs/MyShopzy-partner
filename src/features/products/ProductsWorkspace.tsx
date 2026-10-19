@@ -2,12 +2,8 @@ import { useState } from 'react'
 import { CategoryForm } from './CategoryForm'
 import { CategoryList } from './CategoryList'
 import { Dialog } from './Dialog'
-import {
-  categorySuggestionsByBusinessType,
-} from './demoData'
 import { ProductForm } from './ProductForm'
 import { ProductList } from './ProductList'
-import type { BusinessType } from '../store/types'
 import type {
   CategoryDraft,
   Product,
@@ -20,7 +16,9 @@ type WorkspaceTab = 'products' | 'categories'
 type ProductFilter = 'all' | 'available' | 'out-of-stock'
 
 interface ProductsWorkspaceProps {
-  businessType: BusinessType
+  partnerTypeLabel: string
+  categorySuggestions: string[]
+  allowedUnits: string[]
   categories: ProductCategory[]
   products: Product[]
   onCategoriesChange: (update: (current: ProductCategory[]) => ProductCategory[]) => void
@@ -32,7 +30,9 @@ function isProductFilter(value: string): value is ProductFilter {
 }
 
 export default function ProductsWorkspace({
-  businessType,
+  partnerTypeLabel,
+  categorySuggestions,
+  allowedUnits,
   categories,
   products,
   onCategoriesChange,
@@ -52,7 +52,7 @@ export default function ProductsWorkspace({
     if (filter === 'out-of-stock') return !product.available
     return true
   })
-  const suggestedCategories = categorySuggestionsByBusinessType[businessType].filter(
+  const suggestedCategories = categorySuggestions.filter(
     (suggestion) =>
       !categories.some(
         (category) =>
@@ -165,7 +165,7 @@ export default function ProductsWorkspace({
           <p className="page-eyebrow">Catalog</p>
           <h1>Products</h1>
           <p className="page-description">
-            Manage products and categories for {businessType}. Suggestions and
+            Manage products and categories for {partnerTypeLabel}. Suggestions and
             product options follow this business type.
           </p>
         </div>
@@ -265,7 +265,7 @@ export default function ProductsWorkspace({
             >
               <div className="category-suggestions-heading">
                 <h3 id="category-suggestions-title">
-                  Suggested for {businessType}
+                  Suggested for {partnerTypeLabel}
                 </h3>
                 <p>Add a suggestion to your categories.</p>
               </div>
@@ -298,8 +298,8 @@ export default function ProductsWorkspace({
 
       {showProductForm && (
         <ProductForm
+          allowedUnits={allowedUnits}
           categories={categories}
-          businessType={businessType}
           onCancel={closeProductForm}
           onSave={saveProduct}
           product={productToEdit}

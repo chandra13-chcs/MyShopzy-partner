@@ -1,16 +1,11 @@
-export type BusinessType =
-  | 'Restaurant'
-  | 'Meat Shop'
-  | 'Fruits & Vegetables'
-  | 'Bakery'
-  | 'Sweets Shop'
-  | 'Local Store / Grocery'
+import type { PartnerTypeCode } from '../../types/partner'
+export type { PartnerTypeCode } from '../../types/partner'
 
 export type StoreStatus = 'open' | 'closed'
 
 export interface StoreProfile {
   businessName: string
-  businessType: BusinessType
+  partnerType: PartnerTypeCode
   phone: string
   address: string
   description: string

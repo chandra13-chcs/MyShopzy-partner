@@ -1,6 +1,7 @@
 import { StoreHours } from './StoreHours'
 import { StoreProfile } from './StoreProfile'
 import { StoreStatus } from './StoreStatus'
+import { usePartnerConfig } from '../../services/api/PartnerConfigContext'
 import { getTodayHours } from './timeUtils'
 import type { OperatingHours, StoreProfile as StoreProfileData } from './types'
 import './store.css'
@@ -22,6 +23,7 @@ export default function StoreWorkspace({
   profile,
   storeOpen,
 }: StoreWorkspaceProps) {
+  const { config } = usePartnerConfig()
   return (
     <div className="store-workspace">
       <div className="store-page-heading">
@@ -45,7 +47,7 @@ export default function StoreWorkspace({
         </div>
         <div className="store-summary-item">
           <span className="store-summary-label">Business type</span>
-          <strong>{profile.businessType}</strong>
+          <strong>{config?.profile.label}</strong>
         </div>
         <div className="store-summary-item">
           <span className="store-summary-label">Today’s hours</span>

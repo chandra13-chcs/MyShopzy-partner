@@ -2,6 +2,7 @@ import { OrderStatusBadge } from '../features/orders/OrderStatusBadge'
 import type { DemoOrder } from '../features/orders/types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { orderStatusTranslationKeys } from '../i18n/translations'
+import { usePartnerOrderStatusLabel } from '../services/api/PartnerConfigContext'
 
 interface DashboardPageProps {
   businessName: string
@@ -25,6 +26,7 @@ export default function DashboardPage({
   onToggleStore,
 }: DashboardPageProps) {
   const { language, t } = useLanguage()
+  const partnerLabel = usePartnerOrderStatusLabel()
   const pendingCount = orders.filter((order) => order.status === 'PENDING').length
   const todaysOrders = orders.filter(isFromToday)
   const deliveredToday = todaysOrders.filter(
@@ -137,7 +139,10 @@ export default function DashboardPage({
                     aria-label={t('orders.viewOrder', {
                       id: order.id,
                       customer: order.customerName,
-                      status: t(orderStatusTranslationKeys[order.status]),
+                      status: partnerLabel(
+                        order.status,
+                        t(orderStatusTranslationKeys[order.status]),
+                      ),
                     })}
                     className="home-active-row"
                     onClick={() => onOpenOrder(order.id)}

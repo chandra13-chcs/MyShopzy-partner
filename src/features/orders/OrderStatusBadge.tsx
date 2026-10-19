@@ -4,6 +4,7 @@ import {
   type TranslationKey,
 } from '../../i18n/translations'
 import type { OrderStatus } from './types'
+import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 
 interface OrderStatusBadgeProps {
   status: OrderStatus
@@ -11,6 +12,7 @@ interface OrderStatusBadgeProps {
 
 export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   const { t } = useLanguage()
+  const partnerLabel = usePartnerOrderStatusLabel()
   const statusKeys: Record<OrderStatus, TranslationKey> =
     orderStatusTranslationKeys
   const safeStatus =
@@ -22,7 +24,7 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   return (
     <span className={`order-status-badge status-${safeStatus.toLowerCase()}`}>
       <span className="order-status-dot" />
-      {t(statusKeys[safeStatus])}
+      {partnerLabel(safeStatus, t(statusKeys[safeStatus]))}
     </span>
   )
 }
