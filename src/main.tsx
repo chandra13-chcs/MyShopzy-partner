@@ -2,14 +2,20 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
 import './index.css'
-import App from './app/App.tsx'
+import App, { LocalPreviewApp } from './app/App.tsx'
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE
 const root = createRoot(document.getElementById('root')!)
 
-if (!domain || !clientId || !audience) {
+if (import.meta.env.DEV) {
+  root.render(
+    <StrictMode>
+      <LocalPreviewApp />
+    </StrictMode>,
+  )
+} else if (!domain || !clientId || !audience) {
   root.render(
     <StrictMode>
       <main className="main-content">

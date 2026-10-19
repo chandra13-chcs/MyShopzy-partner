@@ -29,8 +29,13 @@ import LoginPage from '../pages/LoginPage'
 import MorePage from '../pages/MorePage'
 import { LanguageProvider } from '../i18n/LanguageProvider'
 import { useLanguage } from '../i18n/LanguageContext'
-import { PartnerConfigProvider, usePartnerConfig } from '../services/api/PartnerConfigContext'
-import { resolveRoute, type AppRoute } from './routes'
+import {
+  PartnerConfigPreviewProvider,
+  PartnerConfigProvider,
+  usePartnerConfig,
+  type PartnerConfig,
+} from '../services/api/PartnerConfigContext'
+import { resolveRoute, routes, type AppRoute } from './routes'
 
 function LoadingPage({ title, description }: { title: string; description: string }) {
   return (
@@ -55,6 +60,43 @@ function makeDemoCatalog() {
   }
 }
 
+const localPreviewConfig: PartnerConfig = {
+  profile: {
+    label: 'Restaurant',
+    allowedUnits: ['piece', 'kg', 'g', 'litre', 'ml'],
+    extraProductFields: [],
+    defaultCategories: initialCategories.map(({ name }) => ({
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, '-'),
+    })),
+    orderStatusLabels: {
+      accepted: 'Accepted',
+      preparing: 'Preparing',
+      ready: 'Ready for pickup',
+    },
+  },
+  partner: {
+    id: 'local-preview-partner',
+    name: initialStoreProfile.businessName,
+    type: 'restaurant',
+    status: 'active',
+    contactEmail: null,
+    contactPhone: initialStoreProfile.phone,
+    timezone: 'Asia/Kolkata',
+  },
+  shops: [
+    {
+      id: 'local-preview-shop',
+      name: initialStoreProfile.businessName,
+      slug: 'demo-business',
+      status: 'active',
+      address: initialStoreProfile.address,
+      operatingDetails: initialOperatingHours,
+    },
+  ],
+  navigation: routes.filter((item) => item.path !== '/login'),
+}
+
 function PartnerPortal({
   route,
   navigate,
@@ -63,7 +105,7 @@ function PartnerPortal({
 }: {
   route: AppRoute
   navigate: (path: string) => void
-  onLogout: () => void
+  onLogout?: () => void
   logoutError: string
 }) {
   const { t } = useLanguage()
@@ -200,9 +242,11 @@ function PartnerPortal({
             </p>
           )}
           <div className="store-form-actions">
-            <button className="store-secondary-button" onClick={onLogout} type="button">
-              {t('auth.logout')}
-            </button>
+            {onLogout && (
+              <button className="store-secondary-button" onClick={onLogout} type="button">
+                {t('auth.logout')}
+              </button>
+            )}
             <button className="store-primary-button" onClick={() => void reload()} type="button">
               {t('config.retry')}
             </button>
@@ -397,10 +441,50 @@ function AuthenticatedApp() {
   )
 }
 
+function PreviewPortal() {
+  const [route, setRoute] = useState<AppRoute>(() => {
+    const currentRoute = resolveRoute(window.location.pathname)
+    return currentRoute.path === '/login' ? resolveRoute('/') : currentRoute
+  })
+
+  useEffect(() => {
+    function syncRoute() {
+      const currentRoute = resolveRoute(window.location.pathname)
+      setRoute(currentRoute.path === '/login' ? resolveRoute('/') : currentRoute)
+    }
+    window.addEventListener('popstate', syncRoute)
+    return () => window.removeEventListener('popstate', syncRoute)
+  }, [])
+
+  function navigate(path: string) {
+    window.history.pushState({}, '', path)
+    const nextRoute = resolveRoute(path)
+    setRoute(nextRoute.path === '/login' ? resolveRoute('/') : nextRoute)
+  }
+
+  return (
+    <PartnerConfigPreviewProvider config={localPreviewConfig}>
+      <PartnerPortal
+        route={route}
+        navigate={navigate}
+        logoutError=""
+      />
+    </PartnerConfigPreviewProvider>
+  )
+}
+
 function App() {
   return (
     <LanguageProvider>
       <AuthenticatedApp />
+    </LanguageProvider>
+  )
+}
+
+export function LocalPreviewApp() {
+  return (
+    <LanguageProvider>
+      <PreviewPortal />
     </LanguageProvider>
   )
 }

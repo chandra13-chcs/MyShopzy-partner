@@ -1,5 +1,9 @@
 # React + TypeScript + Vite
 
+## Local partner preview
+
+Run `npm run dev` to open the partner workspace with local demo fixtures. The preview is only enabled by Vite's development mode; it does not sign in, request partner configuration from the API, or persist changes. Production builds continue to require the configured authentication flow.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

@@ -10,7 +10,7 @@ interface AppShellProps {
   children: ReactNode
   navigation: AppRoute[]
   onNavigate: (path: string) => void
-  onLogout: () => void
+  onLogout?: () => void
   onOpenOrder: (orderId: string) => void
   storeOpen: boolean
 }
@@ -151,17 +151,19 @@ export function AppShell({
               <span>{t(routeTranslationKeys[item.path])}</span>
             </a>
           ))}
-          <a
-            className="nav-link"
-            href="/login"
-            onClick={(event) => {
-              event.preventDefault()
-              onLogout()
-            }}
-          >
-            <NavigationIcon path="/logout" />
-            <span>{t('auth.logout')}</span>
-          </a>
+          {onLogout && (
+            <a
+              className="nav-link"
+              href="/login"
+              onClick={(event) => {
+                event.preventDefault()
+                onLogout()
+              }}
+            >
+              <NavigationIcon path="/logout" />
+              <span>{t('auth.logout')}</span>
+            </a>
+          )}
         </nav>
         <div className="sidebar-footer">
           <span className={`status-dot${storeOpen ? ' is-open' : ''}`} />
@@ -237,15 +239,17 @@ export function AppShell({
               {storeOpen ? t('app.open') : t('app.closed')}
             </span>
           </div>
-          <button
-            aria-label={t('auth.logout')}
-            className="profile-button"
-            onClick={onLogout}
-            title={t('auth.logout')}
-            type="button"
-          >
-            <span aria-hidden="true">{businessName.slice(0, 1).toUpperCase()}</span>
-          </button>
+          {onLogout && (
+            <button
+              aria-label={t('auth.logout')}
+              className="profile-button"
+              onClick={onLogout}
+              title={t('auth.logout')}
+              type="button"
+            >
+              <span aria-hidden="true">{businessName.slice(0, 1).toUpperCase()}</span>
+            </button>
+          )}
         </header>
 
         <main className="main-content">{children}</main>

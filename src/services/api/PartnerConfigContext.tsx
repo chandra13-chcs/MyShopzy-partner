@@ -127,13 +127,17 @@ export function PartnerConfigProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     setError(null)
     try {
-      const client = createApiClient(() =>
-        getAccessTokenSilently({
+      const client = createApiClient(async () => {
+        const accessToken = await getAccessTokenSilently({
           authorizationParams: {
             audience: import.meta.env.VITE_AUTH0_AUDIENCE,
           },
-        }),
-      )
+        })
+        if (!accessToken) {
+          throw new Error('Could not retrieve an access token.')
+        }
+        return accessToken
+      })
       const response = await client.get<ConfigResponse>('/partner/me/config')
       if (currentRequestId === requestId.current) {
         setConfig(validateConfigResponse(response))
@@ -159,6 +163,30 @@ export function PartnerConfigProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({ config, loading, error, reload }),
     [config, loading, error, reload],
+  )
+
+  return (
+    <PartnerConfigContext.Provider value={value}>
+      {children}
+    </PartnerConfigContext.Provider>
+  )
+}
+
+export function PartnerConfigPreviewProvider({
+  children,
+  config,
+}: {
+  children: ReactNode
+  config: PartnerConfig
+}) {
+  const value = useMemo(
+    () => ({
+      config,
+      loading: false,
+      error: null,
+      reload: async () => {},
+    }),
+    [config],
   )
 
   return (
