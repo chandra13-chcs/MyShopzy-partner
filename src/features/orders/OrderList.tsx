@@ -7,6 +7,9 @@ interface OrderListProps {
   onStatusChange: (orderId: string, status: DemoOrder['status']) => void
   orders: DemoOrder[]
   title: string
+  savingOrderId?: string
+  actionPending?: boolean
+  partnerManaged?: boolean
 }
 
 export function OrderList({
@@ -14,6 +17,9 @@ export function OrderList({
   onStatusChange,
   orders,
   title,
+  savingOrderId,
+  actionPending = false,
+  partnerManaged = false,
 }: OrderListProps) {
   const { t } = useLanguage()
   return (
@@ -30,6 +36,9 @@ export function OrderList({
               onOpen={onOpen}
               onStatusChange={onStatusChange}
               order={order}
+              isSaving={savingOrderId === order.id}
+              actionsDisabled={actionPending}
+              partnerManaged={partnerManaged}
             />
           ))}
         </div>

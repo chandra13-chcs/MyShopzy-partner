@@ -245,6 +245,14 @@ export function normalizeDemoOrder(value: unknown): DemoOrder | undefined {
   if (total !== undefined) order.total = total
   if (discount !== undefined) order.discount = discount
   if (taxes !== undefined) order.taxes = taxes
+  if (
+    typeof value.itemCount === 'number' &&
+    Number.isInteger(value.itemCount) &&
+    value.itemCount >= 0
+  ) {
+    order.itemCount = value.itemCount
+  }
+  if (typeof value.currency === 'string') order.currency = value.currency
   if (typeof value.deliveryInstructions === 'string') {
     order.deliveryInstructions = value.deliveryInstructions
   }

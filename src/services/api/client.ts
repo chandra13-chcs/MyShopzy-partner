@@ -20,6 +20,12 @@ type AccessTokenGetter = () => Promise<string>
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
 
+export interface ApiClient {
+  get<T>(path: string): Promise<T>
+  post<T>(path: string, body: unknown): Promise<T>
+  patch<T>(path: string, body: unknown): Promise<T>
+}
+
 export function createApiClient(getAccessToken: AccessTokenGetter) {
   async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (!apiBaseUrl) {
@@ -102,7 +108,7 @@ export function createApiClient(getAccessToken: AccessTokenGetter) {
       request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
     patch: <T>(path: string, body: unknown) =>
       request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
-  }
+  } satisfies ApiClient
 }
 
 export function normalizeApiError(error: unknown): ApiErrorShape {

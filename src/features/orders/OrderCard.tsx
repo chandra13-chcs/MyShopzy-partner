@@ -19,16 +19,21 @@ interface OrderCardProps {
   onOpen: (order: DemoOrder) => void
   onStatusChange: (orderId: string, status: DemoOrder['status']) => void
   order: DemoOrder
+  isSaving?: boolean
+  actionsDisabled?: boolean
+  partnerManaged?: boolean
 }
 
-function nextAction(status: DemoOrder['status']) {
+function nextAction(status: DemoOrder['status'], partnerManaged: boolean) {
   switch (status) {
     case 'ACCEPTED':
       return { label: 'orders.startPreparing' as const, status: 'PREPARING' as const }
     case 'PREPARING':
       return { label: 'orders.markReady' as const, status: 'READY_FOR_PICKUP' as const }
     case 'READY_FOR_PICKUP':
-      return { label: 'orders.completeOrder' as const, status: 'COMPLETED' as const }
+      return partnerManaged
+        ? undefined
+        : { label: 'orders.completeOrder' as const, status: 'COMPLETED' as const }
     default:
       return undefined
   }
@@ -112,12 +117,15 @@ export function OrderCard({
   onOpen,
   onStatusChange,
   order: rawOrder,
+  isSaving = false,
+  actionsDisabled = false,
+  partnerManaged = false,
 }: OrderCardProps) {
   const { t } = useLanguage()
   const partnerLabel = usePartnerOrderStatusLabel()
   const order = normalizeDemoOrder(rawOrder)
 
-  if (!order || order.status === 'UNKNOWN') {
+  if (!order) {
     return (
       <article className="order-card order-card-unavailable">
         <strong>{t('orders.unavailable')}</strong>
@@ -126,11 +134,11 @@ export function OrderCard({
     )
   }
 
-  const next = nextAction(order.status)
+  const next = nextAction(order.status, partnerManaged)
   const isNew = order.status === 'PENDING'
-  const itemCount = order.items.every((item) => item.quantity !== undefined)
+  const itemCount = order.itemCount ?? (order.items.every((item) => item.quantity !== undefined)
     ? order.items.reduce((count, item) => count + (item.quantity ?? 0), 0)
-    : undefined
+    : undefined)
   const address = [order.address, order.area, order.city]
     .filter((part) => part.trim())
     .join(', ')
@@ -314,6 +322,7 @@ export function OrderCard({
         <div className="order-card-actions">
           <button
             className="order-action-button order-action-accept"
+            disabled={actionsDisabled}
             onClick={() => onStatusChange(order.id, 'ACCEPTED')}
             type="button"
           >
@@ -322,6 +331,7 @@ export function OrderCard({
           </button>
           <button
             className="order-action-button order-action-reject"
+            disabled={actionsDisabled}
             onClick={() => onStatusChange(order.id, 'REJECTED')}
             type="button"
           >
@@ -333,6 +343,7 @@ export function OrderCard({
         <div className="order-card-actions order-card-actions-single">
           <button
             className="order-action-button order-action-progress"
+            disabled={actionsDisabled}
             onClick={() =>
               next.status === 'COMPLETED'
                 ? confirmComplete(order.id, onStatusChange, t)
@@ -340,7 +351,7 @@ export function OrderCard({
             }
             type="button"
           >
-            {t(next.label)}
+            {isSaving ? 'Saving…' : t(next.label)}
           </button>
         </div>
       ) : null}

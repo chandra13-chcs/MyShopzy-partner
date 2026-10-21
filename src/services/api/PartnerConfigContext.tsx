@@ -11,10 +11,11 @@ import {
 import { useAuth0 } from '@auth0/auth0-react'
 import { routes, type AppRoute } from '../../app/routes'
 import type { PartnerTypeCode } from '../../types/partner'
-import { isPartnerTypeCode, partnerTypes } from '../../config/partnerTypes'
+import { isPartnerTypeCode } from '../../config/partnerTypes'
 import {
   createApiClient,
   normalizeApiError,
+  type ApiClient,
   type ApiErrorShape,
 } from './client'
 
@@ -52,17 +53,19 @@ export interface PartnerConfig {
     name: string
     slug: string
     status: string
-    address: string | null
+    address: Record<string, unknown> | null
     operatingDetails: unknown
   }>
   navigation: AppRoute[]
 }
 
 interface PartnerConfigContextValue {
+  apiClient: ApiClient | null
   config: PartnerConfig | null
   loading: boolean
   error: ApiErrorShape | null
   reload: () => Promise<void>
+  refreshConfig: () => Promise<void>
 }
 
 interface ConfigResponse {
@@ -85,6 +88,18 @@ function validateConfigResponse(response: ConfigResponse): PartnerConfig {
     !Array.isArray(data.profile.defaultCategories) ||
     !Array.isArray(data.profile.extraProductFields) ||
     !Array.isArray(data.shops) ||
+    data.shops.some(
+      (shop) =>
+        typeof shop?.id !== 'string' ||
+        typeof shop.name !== 'string' ||
+        typeof shop.slug !== 'string' ||
+        typeof shop.status !== 'string' ||
+        (shop.address !== null &&
+          (typeof shop.address !== 'object' || Array.isArray(shop.address))) ||
+        (shop.operatingDetails !== null &&
+          (typeof shop.operatingDetails !== 'object' ||
+            Array.isArray(shop.operatingDetails))),
+    ) ||
     typeof data.profile.orderStatusLabels?.accepted !== 'string' ||
     typeof data.profile.orderStatusLabels?.preparing !== 'string' ||
     typeof data.profile.orderStatusLabels?.ready !== 'string' ||
@@ -108,6 +123,21 @@ function validateConfigResponse(response: ConfigResponse): PartnerConfig {
 
 export function PartnerConfigProvider({ children }: { children: ReactNode }) {
   const { getAccessTokenSilently } = useAuth0()
+  const apiClient = useMemo(
+    () =>
+      createApiClient(async () => {
+        const accessToken = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          },
+        })
+        if (!accessToken) {
+          throw new Error('Could not retrieve an access token.')
+        }
+        return accessToken
+      }),
+    [getAccessTokenSilently],
+  )
   const [config, setConfig] = useState<PartnerConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiErrorShape | null>(null)
@@ -118,18 +148,7 @@ export function PartnerConfigProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     setError(null)
     try {
-      const client = createApiClient(async () => {
-        const accessToken = await getAccessTokenSilently({
-          authorizationParams: {
-            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-          },
-        })
-        if (!accessToken) {
-          throw new Error('Could not retrieve an access token.')
-        }
-        return accessToken
-      })
-      const response = await client.get<ConfigResponse>('/partner/me/config')
+      const response = await apiClient.get<ConfigResponse>('/partner/me/config')
       if (currentRequestId === requestId.current) {
         setConfig(validateConfigResponse(response))
       }
@@ -142,7 +161,22 @@ export function PartnerConfigProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       }
     }
-  }, [getAccessTokenSilently])
+  }, [apiClient])
+
+  const refreshConfig = useCallback(async () => {
+    const currentRequestId = ++requestId.current
+    setError(null)
+    try {
+      const response = await apiClient.get<ConfigResponse>('/partner/me/config')
+      if (currentRequestId === requestId.current) {
+        setConfig(validateConfigResponse(response))
+      }
+    } catch (loadError) {
+      if (currentRequestId === requestId.current) {
+        throw loadError
+      }
+    }
+  }, [apiClient])
 
   useEffect(() => {
     void reload()
@@ -152,8 +186,8 @@ export function PartnerConfigProvider({ children }: { children: ReactNode }) {
   }, [reload])
 
   const value = useMemo(
-    () => ({ config, loading, error, reload }),
-    [config, loading, error, reload],
+    () => ({ apiClient, config, loading, error, reload, refreshConfig }),
+    [apiClient, config, loading, error, reload, refreshConfig],
   )
 
   return (
@@ -172,10 +206,12 @@ export function PartnerConfigPreviewProvider({
 }) {
   const value = useMemo(
     () => ({
+      apiClient: null,
       config,
       loading: false,
       error: null,
       reload: async () => {},
+      refreshConfig: async () => {},
     }),
     [config],
   )

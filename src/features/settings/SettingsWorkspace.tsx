@@ -18,6 +18,8 @@ interface SettingsWorkspaceProps {
   profile: StoreProfile
   storeOpen: boolean
   demoMode?: boolean
+  canToggleStore?: boolean
+  storeStatusLabel?: string
 }
 
 const dialogContent: Record<SettingsDialogType, { title: string; body: string }> = {
@@ -41,6 +43,8 @@ export default function SettingsWorkspace({
   profile,
   storeOpen,
   demoMode = false,
+  canToggleStore = true,
+  storeStatusLabel,
 }: SettingsWorkspaceProps) {
   const { t } = useLanguage()
   const [preferences, setPreferences] = useState<Preferences>(() => ({
@@ -88,9 +92,11 @@ export default function SettingsWorkspace({
         <LanguagePreference />
         <BusinessPreferences
           onToggleStore={onToggleStore}
+          canToggleStore={canToggleStore}
           operatingHours={operatingHours}
           profile={profile}
           storeOpen={storeOpen}
+          storeStatusLabel={storeStatusLabel}
         />
         <NotificationPreferences
           onChange={updatePreference}

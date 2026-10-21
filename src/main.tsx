@@ -10,7 +10,7 @@ const domain = import.meta.env.VITE_AUTH0_DOMAIN
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE
 const demoModeValue = import.meta.env.VITE_DEMO_MODE
-const demoMode = demoModeValue === 'true'
+const demoMode = import.meta.env.DEV && demoModeValue === 'true'
 const startupUrl = new URL(window.location.href)
 const demoParamsFound = ['partnerId', 'type', 'name', 'shop'].some((key) =>
   startupUrl.searchParams.has(key),
@@ -76,7 +76,7 @@ if (demoMode) {
       </main>,
     )
   })
-} else if (import.meta.env.DEV) {
+} else if (import.meta.env.DEV && (!domain || !clientId || !audience)) {
   logStartup('local-preview', 'restaurant')
   void import('./demo/LocalPreviewApp').then(({ default: LocalPreviewApp }) => {
     renderApp(<LocalPreviewApp />)

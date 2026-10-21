@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { PartnerTypeConfig } from '../../config/partnerTypes'
 import { CategoryForm } from './CategoryForm'
 import { CategoryList } from './CategoryList'
@@ -14,7 +14,7 @@ import type {
 import './products.css'
 
 type WorkspaceTab = 'products' | 'categories'
-type ProductFilter = 'all' | 'available' | 'out-of-stock'
+type ProductFilter = 'all' | 'available' | 'out-of-stock' | 'archived'
 
 interface ProductsWorkspaceProps {
   partnerTypeLabel: string
@@ -24,14 +24,22 @@ interface ProductsWorkspaceProps {
   extraProductFields: PartnerTypeConfig['extraProductFields']
   demoMode?: boolean
   categories: ProductCategory[]
+  shops?: Array<{ id: string; name: string }>
   products: Product[]
   onCategoriesChange: (update: (current: ProductCategory[]) => ProductCategory[]) => void
   onProductsChange: (update: (current: Product[]) => Product[]) => void
   onSaveProduct: (draft: ProductDraft, productId?: string) => Promise<void>
+  onSetProductAvailability?: (productId: string, available: boolean) => Promise<void>
+  onSetProductStatus?: (productId: string, status: 'active' | 'archived') => Promise<void>
+  categoriesEditable?: boolean
+  imageUploadEnabled?: boolean
+  showThresholdControl?: boolean
+  isRefreshing?: boolean
+  onRefresh?: () => void
 }
 
 function isProductFilter(value: string): value is ProductFilter {
-  return value === 'all' || value === 'available' || value === 'out-of-stock'
+  return value === 'all' || value === 'available' || value === 'out-of-stock' || value === 'archived'
 }
 
 export default function ProductsWorkspace({
@@ -42,10 +50,18 @@ export default function ProductsWorkspace({
   extraProductFields,
   demoMode = false,
   categories,
+  shops = [],
   products,
   onCategoriesChange,
   onProductsChange,
   onSaveProduct,
+  onSetProductAvailability,
+  onSetProductStatus,
+  categoriesEditable = true,
+  imageUploadEnabled = true,
+  showThresholdControl = true,
+  isRefreshing = false,
+  onRefresh,
 }: ProductsWorkspaceProps) {
   const [tab, setTab] = useState<WorkspaceTab>('products')
   const [filter, setFilter] = useState<ProductFilter>('all')
@@ -55,8 +71,14 @@ export default function ProductsWorkspace({
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory>()
   const [showProductForm, setShowProductForm] = useState(false)
   const [showCategoryForm, setShowCategoryForm] = useState(false)
+  const [pendingProductId, setPendingProductId] = useState<string>()
+  const [actionError, setActionError] = useState('')
+  const [actionNotice, setActionNotice] = useState('')
+  const productActionInFlight = useRef(false)
 
   const filteredProducts = products.filter((product) => {
+    if (filter === 'archived') return product.status === 'archived'
+    if (product.status === 'archived') return false
     if (filter === 'available') return product.available
     if (filter === 'out-of-stock') return !product.available
     return true
@@ -70,7 +92,9 @@ export default function ProductsWorkspace({
   )
 
   async function saveProduct(draft: ProductDraft) {
+    setActionNotice('')
     await onSaveProduct(draft, productToEdit?.id)
+    setActionNotice(productToEdit ? 'Product changes saved.' : 'Product created.')
     closeProductForm()
   }
 
@@ -132,6 +156,63 @@ export default function ProductsWorkspace({
       current.filter((product) => product.id !== productToDelete.id),
     )
     setProductToDelete(undefined)
+  }
+
+  async function setAvailability(productId: string, available: boolean) {
+    if (productActionInFlight.current) return
+    productActionInFlight.current = true
+    setActionError('')
+    setActionNotice('')
+    setPendingProductId(productId)
+    let saved = false
+    try {
+      if (onSetProductAvailability) {
+        await onSetProductAvailability(productId, available)
+      } else {
+        onProductsChange((current) =>
+          current.map((product) =>
+            product.id === productId ? { ...product, available } : product,
+          ),
+        )
+      }
+      saved = true
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error))
+    } finally {
+      productActionInFlight.current = false
+      setPendingProductId(undefined)
+    }
+    if (saved) setActionNotice('Product availability saved.')
+  }
+
+  async function setProductStatus(product: Product) {
+    if (productActionInFlight.current) return
+    productActionInFlight.current = true
+    setActionError('')
+    setActionNotice('')
+    setPendingProductId(product.id)
+    const nextStatus = product.status === 'archived' ? 'active' : 'archived'
+    let saved = false
+    try {
+      if (onSetProductStatus) {
+        await onSetProductStatus(product.id, nextStatus)
+      } else {
+        onProductsChange((current) =>
+          current.map((item) =>
+            item.id === product.id ? { ...item, status: nextStatus } : item,
+          ),
+        )
+      }
+      saved = true
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error))
+    } finally {
+      productActionInFlight.current = false
+      setPendingProductId(undefined)
+    }
+    if (saved) {
+      setActionNotice(nextStatus === 'archived' ? 'Product archived.' : 'Product activated.')
+    }
   }
 
   function attemptDeleteCategory(category: ProductCategory) {
@@ -199,7 +280,7 @@ export default function ProductsWorkspace({
           >
             <span aria-hidden="true">＋</span> Add Product
           </button>
-        ) : (
+        ) : categoriesEditable ? (
           <button
             className="products-button products-button-primary"
             onClick={openNewCategoryForm}
@@ -207,8 +288,11 @@ export default function ProductsWorkspace({
           >
             <span aria-hidden="true">＋</span> Add Category
           </button>
-        )}
+        ) : null}
       </div>
+
+      {actionError && <p className="store-form-error" role="alert">{actionError}</p>}
+      {actionNotice && <p className="store-form-success" role="status">{actionNotice}</p>}
 
       {tab === 'products' ? (
         <section aria-label="Product list" className="products-section">
@@ -217,6 +301,16 @@ export default function ProductsWorkspace({
               <h2>All {productsLabel.toLowerCase()}</h2>
               <p>Manage the items available to your customers.</p>
             </div>
+            {onRefresh && !demoMode && (
+              <button
+                className="products-button products-button-secondary"
+                disabled={isRefreshing}
+                onClick={onRefresh}
+                type="button"
+              >
+                {isRefreshing ? 'Refreshing…' : 'Refresh products'}
+              </button>
+            )}
             <label className="product-filter">
               <span className="sr-only">Filter products by availability</span>
               <select
@@ -230,19 +324,17 @@ export default function ProductsWorkspace({
                 <option value="all">All products</option>
                 <option value="available">Available</option>
                 <option value="out-of-stock">Out of Stock</option>
+                {onSetProductStatus && <option value="archived">Archived</option>}
               </select>
             </label>
           </div>
           <ProductList
             categories={categories}
-            onAvailabilityChange={(productId, available) =>
-              onProductsChange((current) =>
-                current.map((product) =>
-                  product.id === productId ? { ...product, available } : product,
-                ),
-              )
-            }
+            onAvailabilityChange={(productId, available) => void setAvailability(productId, available)}
             onDelete={setProductToDelete}
+            onStatusChange={onSetProductStatus ? setProductStatus : undefined}
+            deletionEnabled={!onSetProductStatus}
+            pendingProductId={pendingProductId}
             onEdit={editProduct}
             isEmptyCatalog={products.length === 0}
             products={filteredProducts}
@@ -257,7 +349,12 @@ export default function ProductsWorkspace({
             </div>
             <span className="category-count">{categories.length} categories</span>
           </div>
-          {suggestedCategories.length > 0 && (
+          {!categoriesEditable ? (
+            <p role="status">
+              Category creation and editing are unavailable in the current partner API.
+              Existing category IDs are shown where products reference them.
+            </p>
+          ) : suggestedCategories.length > 0 && (
             <section
               aria-labelledby="category-suggestions-title"
               className="category-suggestions"
@@ -283,15 +380,23 @@ export default function ProductsWorkspace({
               </div>
             </section>
           )}
-          <CategoryList
-            categories={categories}
-            onDelete={attemptDeleteCategory}
-            onEdit={(category) => {
-              setCategoryToEdit(category)
-              setShowCategoryForm(true)
-            }}
-            products={products}
-          />
+          {categoriesEditable ? (
+            <CategoryList
+              categories={categories}
+              onDelete={attemptDeleteCategory}
+              onEdit={(category) => {
+                setCategoryToEdit(category)
+                setShowCategoryForm(true)
+              }}
+              products={products}
+            />
+          ) : (
+            <ul>
+              {categories.map((category) => (
+                <li key={category.id}>{category.name}</li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 
@@ -300,9 +405,13 @@ export default function ProductsWorkspace({
           allowedUnits={allowedUnits}
           extraFields={extraProductFields}
           categories={categories}
+          shops={shops}
           onCancel={closeProductForm}
           onSave={saveProduct}
           product={productToEdit}
+          imageUploadEnabled={imageUploadEnabled}
+          allowUncategorized={!categoriesEditable}
+          showThresholdControl={showThresholdControl}
         />
       )}
 

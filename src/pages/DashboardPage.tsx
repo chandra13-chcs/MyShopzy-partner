@@ -11,10 +11,19 @@ interface DashboardPageProps {
   onNavigate: (path: string) => void
   onOpenOrder: (orderId: string) => void
   onToggleStore: () => void
+  canToggleStore?: boolean
+  storeStatusLabel?: string
+  showSalesSummary?: boolean
 }
 
 function isFromToday(order: DemoOrder) {
-  return order.orderedAt?.trim().toLocaleLowerCase().startsWith('today') ?? false
+  if (!order.orderedAt) return false
+  const date = new Date(order.orderedAt)
+  const now = new Date()
+  return Number.isFinite(date.getTime()) &&
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
 }
 
 export default function DashboardPage({
@@ -24,6 +33,9 @@ export default function DashboardPage({
   onNavigate,
   onOpenOrder,
   onToggleStore,
+  canToggleStore = true,
+  storeStatusLabel,
+  showSalesSummary = true,
 }: DashboardPageProps) {
   const { language, t } = useLanguage()
   const partnerLabel = usePartnerOrderStatusLabel()
@@ -61,29 +73,41 @@ export default function DashboardPage({
 
       <section
         className={`store-status-card${storeOpen ? ' store-is-open' : ' store-is-closed'}`}
-        aria-label={storeOpen ? t('home.storeOpen') : t('home.storeClosed')}
+        aria-label={canToggleStore
+          ? storeOpen ? t('home.storeOpen') : t('home.storeClosed')
+          : `Shop status: ${storeStatusLabel || 'unknown'}`}
       >
         <div className="store-status-copy">
           <span className={`status-symbol${storeOpen ? ' is-open' : ''}`}>
             {storeOpen ? '✓' : '–'}
           </span>
           <div>
-            <h2>{storeOpen ? t('home.storeOpen') : t('home.storeClosed')}</h2>
+            <h2>
+              {canToggleStore
+                ? storeOpen ? t('home.storeOpen') : t('home.storeClosed')
+                : `Shop status: ${storeStatusLabel || 'unknown'}`}
+            </h2>
             <p>
-              {storeOpen
-                ? t('home.storeOpenDescription')
-                : t('home.storeClosedDescription')}
+              {canToggleStore
+                ? storeOpen
+                  ? t('home.storeOpenDescription')
+                  : t('home.storeClosedDescription')
+                : 'This is the persisted shop status; operational availability cannot be changed here.'}
             </p>
           </div>
         </div>
-        <button
+        {canToggleStore && <button
           aria-pressed={storeOpen}
           className={`store-toggle${storeOpen ? ' is-open' : ''}`}
+          disabled={!canToggleStore}
           onClick={onToggleStore}
           type="button"
         >
           {storeOpen ? t('home.closeStore') : t('home.openStore')}
-        </button>
+        </button>}
+        {!canToggleStore && (
+          <p role="note">Availability updates are not supported by the partner API.</p>
+        )}
       </section>
 
       <section className="home-summary" aria-labelledby="home-summary-title">
@@ -93,14 +117,20 @@ export default function DashboardPage({
             <span>{t('home.todayOrders')}</span>
             <strong>{todaysOrders.length}</strong>
           </article>
-          <article className="home-summary-card">
-            <span>{t('home.todaySales')}</span>
-            <strong>
-              {hasAllSalesTotals
-                ? `₹${todaysSales.toLocaleString(currencyLocale)}`
-                : t('home.unknownSales')}
-            </strong>
-          </article>
+          {showSalesSummary ? (
+            <article className="home-summary-card">
+              <span>{t('home.todaySales')}</span>
+              <strong>
+                {hasAllSalesTotals
+                  ? `₹${todaysSales.toLocaleString(currencyLocale)}`
+                  : t('home.unknownSales')}
+              </strong>
+            </article>
+          ) : (
+            <p className="home-summary-card" role="note">
+              Sales totals are unavailable because payment confirmation is not provided by the partner API.
+            </p>
+          )}
         </div>
       </section>
 

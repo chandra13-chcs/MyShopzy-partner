@@ -1,5 +1,5 @@
 import type { PartnerDataService, PartnerAccount } from '../services/api/partnerData'
-import type { DemoOrder, TrackedOrderStatus } from '../features/orders/types'
+import type { DemoOrder, RiderStatus, TrackedOrderStatus } from '../features/orders/types'
 import type { Product, ProductDraft, ProductCategory } from '../features/products/types'
 import { processProductImage } from '../services/api/imageProcess'
 
@@ -14,6 +14,16 @@ function isOrderStatus(status: TrackedOrderStatus): status is DemoOrder['status'
     status === 'COMPLETED' ||
     status === 'REJECTED' ||
     status === 'UNKNOWN'
+  )
+}
+
+function isRiderStatus(status: TrackedOrderStatus): status is RiderStatus {
+  return (
+    status === 'FINDING_RIDER' ||
+    status === 'RIDER_ASSIGNED' ||
+    status === 'PICKED_UP' ||
+    status === 'ON_THE_WAY' ||
+    status === 'DELIVERED'
   )
 }
 
@@ -69,6 +79,14 @@ export function createLocalPartnerData(account: PartnerAccount): PartnerDataServ
       persist(nextAccount)
       activeAccount = nextAccount
     },
+    async setProductStatus(productId: string, status: 'active' | 'archived') {
+      const products = activeAccount.products.map((product) =>
+        product.id === productId ? { ...product, status } : product,
+      )
+      const nextAccount = { ...activeAccount, products }
+      persist(nextAccount)
+      activeAccount = nextAccount
+    },
     async deleteProduct(productId: string) {
       const products = activeAccount.products.filter((product) => product.id !== productId)
       const nextAccount = { ...activeAccount, products }
@@ -77,6 +95,11 @@ export function createLocalPartnerData(account: PartnerAccount): PartnerDataServ
     },
     async listOrders() {
       return structuredClone(activeAccount.orders)
+    },
+    async getOrder(orderId: string) {
+      const order = activeAccount.orders.find((item) => item.id === orderId)
+      if (!order) throw new Error('The order could not be found.')
+      return structuredClone(order)
     },
     async setOrderStatus(orderId: string, status: TrackedOrderStatus) {
       activeAccount.orders = activeAccount.orders.map((order) => {
@@ -93,7 +116,8 @@ export function createLocalPartnerData(account: PartnerAccount): PartnerDataServ
             statusHistory: [...order.statusHistory, { status: nextStatus, timestamp }],
           }
         }
-        const nextStatus = status as DemoOrder['deliveryStatus']
+        if (!isRiderStatus(status)) return order
+        const nextStatus = status
         return {
           ...order,
           deliveryStatus: nextStatus,

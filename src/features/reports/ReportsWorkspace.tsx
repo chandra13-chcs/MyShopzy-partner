@@ -49,7 +49,7 @@ export default function ReportsWorkspace({
       name: product.name,
       orders: productCounts.get(product.name)?.orders ?? 0,
       sales: productCounts.get(product.name)?.sales ?? 0,
-      availability: product.available && product.stockQuantity > 0 ? 'Available' as const : 'Out of Stock' as const,
+      availability: product.available && product.stockQuantity !== 0 ? 'Available' as const : 'Out of Stock' as const,
     }))
     const categoryRows = new Map<string, { orders: number; sales: number }>()
     for (const product of products) {
@@ -105,32 +105,42 @@ export default function ReportsWorkspace({
           <p className="page-eyebrow">Business insights</p>
           <h1>Reports</h1>
           <p className="page-description">
-            A simple overview of sales and order performance.
+            {demoMode
+              ? 'A simple overview of sales and order performance.'
+              : 'Order and inventory performance from your partner account.'}
           </p>
         </div>
         {demoMode && <span className="demo-tag demo-tag-large">LOCAL DEMO</span>}
       </div>
 
-      <div className="reports-toolbar">
-        <div>
-          <h2>{periodLabels[period]}</h2>
-          <p>Order performance for the selected period</p>
-        </div>
-        <ReportFilters onChange={setPeriod} period={period} />
-      </div>
-
-      <SalesSummary summary={data.summary} />
-
-      <div className="reports-overview-grid">
-        <SalesTrend points={data.trend} title={data.trendTitle} />
-        <OrderSummary orders={orders} />
-      </div>
-
-      <ProductPerformance
-        categories={data.categories}
-        products={data.products}
-        demoMode={demoMode}
-      />
+      {demoMode ? (
+        <>
+          <div className="reports-toolbar">
+            <div>
+              <h2>{periodLabels[period]}</h2>
+              <p>Order performance for the selected period</p>
+            </div>
+            <ReportFilters onChange={setPeriod} period={period} />
+          </div>
+          <SalesSummary summary={data.summary} />
+          <div className="reports-overview-grid">
+            <SalesTrend points={data.trend} title={data.trendTitle} />
+            <OrderSummary orders={orders} />
+          </div>
+          <ProductPerformance
+            categories={data.categories}
+            products={data.products}
+            demoMode={demoMode}
+          />
+        </>
+      ) : (
+        <>
+          <p className="store-form-error" role="note">
+            Sales and revenue metrics are unavailable because the partner API does not expose payment confirmation or settlement data.
+          </p>
+          <OrderSummary orders={orders} />
+        </>
+      )}
       <ShopOverview
         onNavigate={onNavigate}
         orders={orders}

@@ -5,9 +5,16 @@ import type { OperatingHours } from './types'
 interface StoreHoursProps {
   onSave: (hours: OperatingHours) => void
   hours: OperatingHours
+  readOnly?: boolean
+  persistedSchedule?: { open: string; close: string } | null
 }
 
-export function StoreHours({ hours, onSave }: StoreHoursProps) {
+export function StoreHours({
+  hours,
+  onSave,
+  readOnly = false,
+  persistedSchedule,
+}: StoreHoursProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(hours)
 
@@ -43,9 +50,13 @@ export function StoreHours({ hours, onSave }: StoreHoursProps) {
       <div className="store-section-heading">
         <div>
           <h2 id="store-hours-heading">Operating hours</h2>
-          <p>Set the hours customers can visit your store.</p>
+          <p>
+            {readOnly
+              ? 'The backend supports one daily opening and closing time.'
+              : 'Set the hours customers can visit your store.'}
+          </p>
         </div>
-        {!editing && (
+        {!editing && !readOnly && (
           <button
             className="store-secondary-button"
             onClick={startEditing}
@@ -56,7 +67,18 @@ export function StoreHours({ hours, onSave }: StoreHoursProps) {
         )}
       </div>
 
-      <div className="store-hours-list">
+      {readOnly ? (
+        <div className="store-hours-list" aria-live="polite">
+          <div className="store-hour-row">
+            <span className="store-hour-day">Daily</span>
+            <span className="store-hours-value">
+              {persistedSchedule
+                ? `${formatTime(persistedSchedule.open)} – ${formatTime(persistedSchedule.close)}`
+                : 'Not configured; backend defaults are 07:00–23:00.'}
+            </span>
+          </div>
+        </div>
+      ) : <div className="store-hours-list">
         {draft.map((day, index) => (
           <div className={`store-hour-row${!day.enabled ? ' is-disabled' : ''}`} key={day.day}>
             <span className="store-hour-day">{day.day}</span>
@@ -110,9 +132,9 @@ export function StoreHours({ hours, onSave }: StoreHoursProps) {
             )}
           </div>
         ))}
-      </div>
+      </div>}
 
-      {editing && (
+      {editing && !readOnly && (
         <div className="store-form-actions store-hours-actions">
           <button
             className="store-secondary-button"

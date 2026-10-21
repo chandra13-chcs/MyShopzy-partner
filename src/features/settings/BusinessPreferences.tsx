@@ -8,6 +8,8 @@ interface BusinessPreferencesProps {
   operatingHours: OperatingHours
   profile: StoreProfile
   storeOpen: boolean
+  canToggleStore?: boolean
+  storeStatusLabel?: string
 }
 
 export function BusinessPreferences({
@@ -15,6 +17,8 @@ export function BusinessPreferences({
   operatingHours,
   profile,
   storeOpen,
+  canToggleStore = true,
+  storeStatusLabel,
 }: BusinessPreferencesProps) {
   const { config } = usePartnerConfig()
   return (
@@ -23,7 +27,7 @@ export function BusinessPreferences({
         <span className="settings-section-icon business-icon" aria-hidden="true">⌂</span>
         <div>
           <h2 id="business-preferences-heading">Business preferences</h2>
-          <p>Details connected to your Store Management demo.</p>
+          <p>Partner and shop details from your account.</p>
         </div>
       </div>
       <dl className="settings-business-details">
@@ -45,18 +49,24 @@ export function BusinessPreferences({
           <span className="settings-detail-label">Store status</span>
           <span className={`settings-status${storeOpen ? ' is-open' : ' is-closed'}`}>
             <span />
-            {storeOpen ? 'OPEN' : 'CLOSED'}
+            {(canToggleStore ? storeOpen ? 'open' : 'closed' : storeStatusLabel ?? 'unknown').toUpperCase()}
           </span>
         </div>
-        <button
+        {canToggleStore && <button
           aria-pressed={storeOpen}
           className="settings-button settings-button-secondary"
+          disabled={!canToggleStore}
           onClick={onToggleStore}
           type="button"
         >
           {storeOpen ? 'Close store' : 'Open store'}
-        </button>
+        </button>}
       </div>
+      {!canToggleStore && (
+        <p className="settings-inline-note" role="note">
+          Availability updates are not supported by the partner API.
+        </p>
+      )}
       <p className="settings-inline-note">
         Business name, type, and hours are managed in Store Management.
       </p>

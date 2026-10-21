@@ -14,6 +14,10 @@ interface OrderDetailsProps {
   onStatusChange: (orderId: string, status: OrderStatus) => void
   onDeliveryStatusChange: (orderId: string, status: RiderStatus) => void
   order: DemoOrder
+  isSaving?: boolean
+  actionsDisabled?: boolean
+  partnerManaged?: boolean
+  demoMode?: boolean
 }
 
 const deliverySteps: OrderStatus[] = [
@@ -23,7 +27,7 @@ const deliverySteps: OrderStatus[] = [
   'COMPLETED',
 ]
 
-function partnerAction(status: OrderStatus) {
+function partnerAction(status: OrderStatus, partnerManaged: boolean) {
   switch (status) {
     case 'PENDING':
       return { label: 'orders.accept' as const, status: 'ACCEPTED' as const }
@@ -32,7 +36,9 @@ function partnerAction(status: OrderStatus) {
     case 'PREPARING':
       return { label: 'orders.markReady' as const, status: 'READY_FOR_PICKUP' as const }
     case 'READY_FOR_PICKUP':
-      return { label: 'orders.completeOrder' as const, status: 'COMPLETED' as const }
+      return partnerManaged
+        ? undefined
+        : { label: 'orders.completeOrder' as const, status: 'COMPLETED' as const }
     default:
       return undefined
   }
@@ -64,6 +70,10 @@ export function OrderDetails({
   onStatusChange,
   onDeliveryStatusChange,
   order: rawOrder,
+  isSaving = false,
+  actionsDisabled = false,
+  partnerManaged = false,
+  demoMode = false,
 }: OrderDetailsProps) {
   const { t } = useLanguage()
   const partnerLabel = usePartnerOrderStatusLabel()
@@ -76,7 +86,7 @@ export function OrderDetails({
   }, [onClose])
 
   const order = normalizeDemoOrder(rawOrder)
-  if (!order || order.status === 'UNKNOWN') {
+  if (!order) {
     return (
       <div className="order-details-backdrop" onMouseDown={onClose}>
         <section
@@ -96,9 +106,9 @@ export function OrderDetails({
     )
   }
 
-  const action = partnerAction(order.status)
+  const action = partnerAction(order.status, partnerManaged)
   const simulatedAction =
-    (order.status === 'READY_FOR_PICKUP' || order.status === 'COMPLETED')
+    demoMode && (order.status === 'READY_FOR_PICKUP' || order.status === 'COMPLETED')
       ? demoAction(order.deliveryStatus)
       : undefined
   const rejected = order.status === 'REJECTED'
@@ -444,6 +454,7 @@ export function OrderDetails({
             {order.status === 'PENDING' && (
               <button
                 className="order-action-button order-action-reject"
+                disabled={actionsDisabled}
                 onClick={() => onStatusChange(order.id, 'REJECTED')}
                 type="button"
               >
@@ -453,6 +464,7 @@ export function OrderDetails({
             {action && (
               <button
                 className={`order-action-button${order.status === 'PENDING' ? ' order-action-accept' : ' order-action-progress'}`}
+                disabled={actionsDisabled}
                 onClick={() => {
                   if (
                     action.status !== 'COMPLETED' ||
@@ -463,7 +475,7 @@ export function OrderDetails({
                 }}
                 type="button"
               >
-                {t(action.label)}
+                {isSaving ? 'Saving…' : t(action.label)}
               </button>
             )}
           </footer>

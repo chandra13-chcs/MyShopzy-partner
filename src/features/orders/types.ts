@@ -64,4 +64,6 @@ export interface DemoOrder {
   deliveredAt?: string
   completedAt?: string
   rejectionReason?: string
+  itemCount?: number
+  currency?: string
 }

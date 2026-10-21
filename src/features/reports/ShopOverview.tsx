@@ -29,7 +29,9 @@ export function ShopOverview({
   const lowStock = products.filter(
     (product) =>
       product.available &&
+      product.stockQuantity !== null &&
       product.stockQuantity > 0 &&
+      product.restockThreshold !== undefined &&
       product.stockQuantity <= product.restockThreshold,
   )
 
@@ -83,7 +85,7 @@ export function ShopOverview({
                 <li key={product.id}>
                   <span>
                     <strong>{product.name}</strong>
-                    <small>{t('shopOverview.stockCount', { count: product.stockQuantity })}</small>
+                    <small>{t('shopOverview.stockCount', { count: product.stockQuantity ?? 0 })}</small>
                   </span>
                   <span className="shop-stock-badge is-out">
                     {t('shopOverview.outLabel')}
@@ -112,8 +114,8 @@ export function ShopOverview({
                     <strong>{product.name}</strong>
                     <small>
                       {t('shopOverview.stockThreshold', {
-                        count: product.stockQuantity,
-                        threshold: product.restockThreshold,
+                        count: product.stockQuantity ?? 0,
+                        threshold: product.restockThreshold ?? 0,
                       })}
                     </small>
                   </span>

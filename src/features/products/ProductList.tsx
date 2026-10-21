@@ -4,6 +4,9 @@ interface ProductListProps {
   categories: ProductCategory[]
   onAvailabilityChange: (productId: string, available: boolean) => void
   onDelete: (product: Product) => void
+  onStatusChange?: (product: Product) => void
+  deletionEnabled?: boolean
+  pendingProductId?: string
   onEdit: (product: Product) => void
   products: Product[]
   isEmptyCatalog?: boolean
@@ -42,6 +45,9 @@ export function ProductList({
   categories,
   onAvailabilityChange,
   onDelete,
+  onStatusChange,
+  deletionEnabled = true,
+  pendingProductId,
   onEdit,
   products,
   isEmptyCatalog = false,
@@ -79,16 +85,18 @@ export function ProductList({
                 <td>{categoryName(product.categoryId)}</td>
                 <td className="product-price">{formatProductPrice(product)}</td>
                 <td>
-                  <span className={`product-stock-value${product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
-                    {product.stockQuantity}
+                  <span className={`product-stock-value${product.restockThreshold !== undefined && product.stockQuantity !== null && product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
+                    {product.stockQuantity ?? 'Not tracked'}
                   </span>
-                  <span className="product-stock-threshold">
-                    Alert at {product.restockThreshold}
-                  </span>
+                  {product.restockThreshold !== undefined && (
+                    <span className="product-stock-threshold">
+                      Alert at {product.restockThreshold}
+                    </span>
+                  )}
                 </td>
                 <td>
                   <AvailabilityBadge
-                    available={product.available && product.stockQuantity > 0}
+                    available={product.available && product.stockQuantity !== 0}
                   />
                   <label className="sr-only" htmlFor={`availability-${product.id}`}>
                     {product.stockQuantity === 0
@@ -98,7 +106,7 @@ export function ProductList({
                   <input
                     checked={product.available}
                     className="product-inline-toggle"
-                    disabled={product.stockQuantity === 0}
+                    disabled={product.stockQuantity === 0 || pendingProductId !== undefined}
                     id={`availability-${product.id}`}
                     onChange={(event) => onAvailabilityChange(product.id, event.target.checked)}
                     type="checkbox"
@@ -109,19 +117,34 @@ export function ProductList({
                     <button
                       aria-label={`Edit ${product.name}`}
                       className="text-action"
+                      disabled={pendingProductId !== undefined}
                       onClick={() => onEdit(product)}
                       type="button"
                     >
                       Edit
                     </button>
-                    <button
-                      aria-label={`Delete ${product.name}`}
-                      className="text-action is-danger"
-                      onClick={() => onDelete(product)}
-                      type="button"
-                    >
-                      Delete
-                    </button>
+                    {onStatusChange ? (
+                      <button
+                        aria-label={`${product.status === 'archived' ? 'Activate' : 'Archive'} ${product.name}`}
+                        className="text-action"
+                        disabled={pendingProductId !== undefined}
+                        onClick={() => onStatusChange(product)}
+                        type="button"
+                      >
+                        {pendingProductId === product.id
+                          ? 'Saving…'
+                          : product.status === 'archived' ? 'Activate' : 'Archive'}
+                      </button>
+                    ) : deletionEnabled && (
+                      <button
+                        aria-label={`Delete ${product.name}`}
+                        className="text-action is-danger"
+                        onClick={() => onDelete(product)}
+                        type="button"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -145,19 +168,21 @@ export function ProductList({
             <p className="product-card-description">
               {product.description || 'No description provided.'}
             </p>
-            <p className={`product-card-stock${product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
-              Stock: <strong>{product.stockQuantity}</strong>
-              <span>Alert at {product.restockThreshold}</span>
+            <p className={`product-card-stock${product.stockQuantity !== null && product.restockThreshold !== undefined && product.stockQuantity <= product.restockThreshold ? ' is-low' : ''}`}>
+              Stock: <strong>{product.stockQuantity ?? 'Not tracked'}</strong>
+              {product.restockThreshold !== undefined && (
+                <span>Alert at {product.restockThreshold}</span>
+              )}
             </p>
             <div className="product-card-status">
               <AvailabilityBadge
-                available={product.available && product.stockQuantity > 0}
+                available={product.available && product.stockQuantity !== 0}
               />
               <label className="availability-control compact-control">
                 <span className="sr-only">Available for sale</span>
                 <input
                   checked={product.available}
-                  disabled={product.stockQuantity === 0}
+                  disabled={product.stockQuantity === 0 || pendingProductId !== undefined}
                   onChange={(event) => onAvailabilityChange(product.id, event.target.checked)}
                   type="checkbox"
                 />
@@ -167,18 +192,32 @@ export function ProductList({
             <div className="product-card-actions">
               <button
                 className="products-button products-button-secondary"
+                disabled={pendingProductId !== undefined}
                 onClick={() => onEdit(product)}
                 type="button"
               >
                 Edit
               </button>
-              <button
-                className="products-button products-button-danger"
-                onClick={() => onDelete(product)}
-                type="button"
-              >
-                Delete
-              </button>
+              {onStatusChange ? (
+                <button
+                  className="products-button products-button-secondary"
+                  disabled={pendingProductId !== undefined}
+                  onClick={() => onStatusChange(product)}
+                  type="button"
+                >
+                  {pendingProductId === product.id
+                    ? 'Saving…'
+                    : product.status === 'archived' ? 'Activate' : 'Archive'}
+                </button>
+              ) : deletionEnabled && (
+                <button
+                  className="products-button products-button-danger"
+                  onClick={() => onDelete(product)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </article>
         ))}

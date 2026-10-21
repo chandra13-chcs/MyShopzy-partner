@@ -2,7 +2,7 @@
 
 ## Local partner preview
 
-Run `npm run dev` to open the partner workspace with local demo fixtures. The preview is only enabled by Vite's development mode; it does not sign in, request partner configuration from the API, or persist changes. Production builds continue to require the configured authentication flow.
+Run `npm run dev` with the example environment to open the partner workspace with local demo fixtures. The preview is only enabled in Vite development mode; it does not sign in, request partner configuration from the API, or persist changes. To exercise the real partner APIs locally, set `VITE_DEMO_MODE=false` and configure the Auth0 domain, client ID, and audience. Production builds always use the authenticated flow and never load local demo fixtures.
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

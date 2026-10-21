@@ -41,6 +41,15 @@ interface OrdersWorkspaceProps {
   selectedOrderId?: string
   demoMode?: boolean
   canSimulateOrder?: boolean
+  partnerManaged?: boolean
+  savingOrderId?: string
+  orderDetails?: DemoOrder
+  orderDetailsLoading?: boolean
+  orderDetailsError?: string
+  onRetryOrderDetails?: () => void
+  actionNotice?: string
+  isRefreshing?: boolean
+  onRefresh?: () => void
 }
 
 export default function OrdersWorkspace({
@@ -52,6 +61,15 @@ export default function OrdersWorkspace({
   selectedOrderId,
   demoMode = false,
   canSimulateOrder = false,
+  partnerManaged = false,
+  savingOrderId,
+  orderDetails,
+  orderDetailsLoading = false,
+  orderDetailsError = '',
+  onRetryOrderDetails,
+  actionNotice = '',
+  isRefreshing = false,
+  onRefresh,
 }: OrdersWorkspaceProps) {
   const { t } = useLanguage()
   const partnerStatusLabel = usePartnerOrderStatusLabel()
@@ -116,6 +134,16 @@ export default function OrdersWorkspace({
         </div>
         <div className="orders-page-actions">
           {demoMode && <span className="demo-tag demo-tag-large">{t('orders.localDemo')}</span>}
+          {onRefresh && !demoMode && (
+            <button
+              className="products-button products-button-secondary"
+              disabled={isRefreshing}
+              onClick={onRefresh}
+              type="button"
+            >
+              {isRefreshing ? 'Refreshing…' : 'Refresh orders'}
+            </button>
+          )}
           <button
             aria-pressed={alertsEnabled}
             className={`orders-alert-toggle${alertsEnabled ? ' is-enabled' : ''}`}
@@ -159,6 +187,7 @@ export default function OrdersWorkspace({
                   : 'orders.newAttentionMany',
                 { count: newOrderCount },
               )}
+              {actionNotice && <p className="store-form-success" role="status">{actionNotice}</p>}
             </strong>
             <p>{t('orders.pendingDescription')}</p>
           </div>
@@ -258,6 +287,9 @@ export default function OrdersWorkspace({
                 onStatusChange={handleStatusChange}
                 orders={activeOrders}
                 title={t('orders.activeGroup')}
+                savingOrderId={savingOrderId}
+                actionPending={Boolean(savingOrderId)}
+                partnerManaged={partnerManaged}
               />
             )}
             {showHistory && (
@@ -266,6 +298,9 @@ export default function OrdersWorkspace({
                 onStatusChange={handleStatusChange}
                 orders={completedHistoryOrders}
                 title={t('orders.historyGroup')}
+                savingOrderId={savingOrderId}
+                actionPending={Boolean(savingOrderId)}
+                partnerManaged={partnerManaged}
               />
             )}
             {showRejectedHistory && (
@@ -274,19 +309,39 @@ export default function OrdersWorkspace({
                 onStatusChange={handleStatusChange}
                 orders={rejectedHistoryOrders}
                 title={t('orders.rejectedGroup')}
+                savingOrderId={savingOrderId}
+                actionPending={Boolean(savingOrderId)}
+                partnerManaged={partnerManaged}
               />
             )}
           </div>
         )}
       </section>
 
+      {selectedOrderId && orderDetailsLoading && (
+        <p className="store-form-error" aria-live="polite" role="status">
+          Loading persisted order details…
+        </p>
+      )}
+      {selectedOrderId && orderDetailsError && (
+        <p className="store-form-error" role="alert">
+          {orderDetailsError}{' '}
+          <button onClick={onRetryOrderDetails} type="button">Retry</button>
+        </p>
+      )}
       {selectedOrder && (
-        <OrderDetails
-          onClose={() => onSelectOrder(undefined)}
-          onDeliveryStatusChange={onDeliveryStatusChange}
-          onStatusChange={handleStatusChange}
-          order={selectedOrder}
-        />
+        (!partnerManaged || orderDetails?.id === selectedOrder.id) && (
+          <OrderDetails
+            onClose={() => onSelectOrder(undefined)}
+            onDeliveryStatusChange={onDeliveryStatusChange}
+            onStatusChange={handleStatusChange}
+            order={orderDetails?.id === selectedOrder.id ? orderDetails : selectedOrder}
+            isSaving={savingOrderId === selectedOrder.id}
+            actionsDisabled={Boolean(savingOrderId)}
+            partnerManaged={partnerManaged}
+            demoMode={demoMode}
+          />
+        )
       )}
     </div>
   )

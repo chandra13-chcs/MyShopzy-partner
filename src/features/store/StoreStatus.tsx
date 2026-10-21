@@ -1,9 +1,16 @@
 interface StoreStatusProps {
   onToggle: () => void
   storeOpen: boolean
+  readOnly?: boolean
+  storeStatusLabel?: string
 }
 
-export function StoreStatus({ onToggle, storeOpen }: StoreStatusProps) {
+export function StoreStatus({
+  onToggle,
+  storeOpen,
+  readOnly = false,
+  storeStatusLabel,
+}: StoreStatusProps) {
   return (
     <section
       aria-label="Store status"
@@ -15,22 +22,30 @@ export function StoreStatus({ onToggle, storeOpen }: StoreStatusProps) {
         </span>
         <div>
           <span className="store-management-eyebrow">Store status</span>
-          <h2>{storeOpen ? 'Your store is OPEN' : 'Your store is CLOSED'}</h2>
+          <h2>
+            {readOnly
+              ? `Shop status: ${storeStatusLabel || 'unknown'}`
+              : storeOpen ? 'Your store is OPEN' : 'Your store is CLOSED'}
+          </h2>
           <p>
-            {storeOpen
-              ? 'Customers can browse your store and place new orders.'
-              : 'Customers cannot place new orders while the store is closed.'}
+            {readOnly
+              ? 'This is the persisted shop status; operational availability cannot be changed here.'
+              : storeOpen
+                ? 'Customers can browse your store and place new orders.'
+                : 'Customers cannot place new orders while the store is closed.'}
           </p>
         </div>
       </div>
-      <button
+      {!readOnly && <button
         aria-pressed={storeOpen}
         className={`store-management-toggle${storeOpen ? ' is-open' : ''}`}
+        disabled={readOnly}
         onClick={onToggle}
         type="button"
       >
         {storeOpen ? 'Close store' : 'Open store'}
-      </button>
+      </button>}
+      {readOnly && <small role="note">Availability updates are not supported by the partner API.</small>}
     </section>
   )
 }

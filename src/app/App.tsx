@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { AppShell } from '../components/layout/AppShell'
 import OrdersWorkspace from '../features/orders/OrdersWorkspace'
@@ -28,7 +28,12 @@ import {
 } from '../services/api/PartnerConfigContext'
 import { resolveRoute, routes, type AppRoute } from './routes'
 import { partnerTypes } from '../config/partnerTypes'
-import { partnerData, type PartnerAccount } from '../services/api/partnerData'
+import {
+  createBackendPartnerData,
+  partnerData,
+  type PartnerAccount,
+  type PartnerDataService,
+} from '../services/api/partnerData'
 
 function LoadingPage({ title, description }: { title: string; description: string }) {
   return (
@@ -52,6 +57,50 @@ const emptyStoreProfile: StoreProfile = {
 const emptyOperatingHours: OperatingHours = [
   'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
 ].map((day) => ({ day, enabled: false, openingTime: '09:00', closingTime: '22:00' }))
+
+function formatShopAddress(address: Record<string, unknown> | null | undefined) {
+  if (!address) return ''
+  return Object.entries(address)
+    .filter(([key, value]) =>
+      ['address', 'line1', 'line2', 'street', 'area', 'landmark', 'city', 'district', 'state', 'postalCode', 'postal_code', 'pincode'].includes(key) &&
+      typeof value === 'string' &&
+      value.trim().length > 0,
+    )
+    .map(([, value]) => value as string)
+    .join(', ')
+}
+
+function hoursFromShop(shop: PartnerConfig['shops'][number] | undefined): OperatingHours {
+  const details = shop?.operatingDetails
+  const open = details && typeof details === 'object' && 'open' in details &&
+      typeof details.open === 'string'
+    ? details.open
+    : '07:00'
+  const close = details && typeof details === 'object' && 'close' in details &&
+      typeof details.close === 'string'
+    ? details.close
+    : '23:00'
+  return emptyOperatingHours.map((day) => ({
+    ...day,
+    enabled: true,
+    openingTime: open,
+    closingTime: close,
+  }))
+}
+
+function categoriesFromProducts(products: Product[]): ProductCategory[] {
+  const categories = new Map<string, ProductCategory>()
+  for (const product of products) {
+    if (product.categoryId && !categories.has(product.categoryId)) {
+      categories.set(product.categoryId, {
+        id: product.categoryId,
+        name: product.categoryId,
+        ...(product.shopId ? { shopId: product.shopId } : {}),
+      })
+    }
+  }
+  return [...categories.values()]
+}
 
 function createPreviewConfig(account: PartnerAccount): PartnerConfig {
   const type = partnerTypes[account.type]
@@ -106,7 +155,11 @@ function PartnerPortal({
   simulateOrder?: (product: Product) => DemoOrder
 }) {
   const { t } = useLanguage()
-  const { config, loading, error, reload } = usePartnerConfig()
+  const { apiClient, config, loading, error, reload } = usePartnerConfig()
+  const apiData = useMemo(
+    () => apiClient ? createBackendPartnerData(apiClient) : null,
+    [apiClient],
+  )
   const [storeOpen, setStoreOpen] = useState(
     () => demoMode || config?.shops[0]?.status === 'active',
   )
@@ -117,7 +170,7 @@ function PartnerPortal({
           businessName: demoAccount?.businessName ?? config?.partner.name ?? '',
           partnerType: demoAccount?.type ?? config?.partner.type ?? 'restaurant',
           phone: config?.partner.contactPhone ?? '',
-          address: config?.shops[0]?.address ?? '',
+          address: formatShopAddress(config?.shops[0]?.address),
         }
       : null,
   )
@@ -126,7 +179,16 @@ function PartnerPortal({
   const [catalog, setCatalog] = useState(() => demoAccount
     ? { categories: demoAccount.categories, products: demoAccount.products }
     : null)
+  const [dataLoading, setDataLoading] = useState(!demoMode)
+  const [dataRefreshing, setDataRefreshing] = useState(false)
+  const [savingOrderId, setSavingOrderId] = useState<string>()
+  const [orderActionNotice, setOrderActionNotice] = useState('')
+  const orderActionInFlight = useRef(false)
+  const dataRequestId = useRef(0)
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<DemoOrder>()
+  const [orderDetailsLoading, setOrderDetailsLoading] = useState(false)
+  const [orderDetailsError, setOrderDetailsError] = useState('')
   const [initialized, setInitialized] = useState(false)
   const [dataError, setDataError] = useState('')
 
@@ -137,6 +199,59 @@ function PartnerPortal({
       setDataError(error instanceof Error ? error.message : String(error))
     })
   }
+
+  async function reloadPartnerData(service: PartnerDataService | null = apiData) {
+    if (!service || demoMode) return
+    const requestId = ++dataRequestId.current
+    const hasExistingData = catalog !== null
+    setDataError('')
+    setDataRefreshing(true)
+    if (!hasExistingData) setDataLoading(true)
+    try {
+      const [products, nextOrders] = await Promise.all([
+        service.listProducts(),
+        service.listOrders(),
+      ])
+      if (requestId !== dataRequestId.current) return
+      setCatalog({ categories: categoriesFromProducts(products), products })
+      setOrders(normalizeDemoOrders(nextOrders))
+    } catch (loadError) {
+      if (requestId === dataRequestId.current) {
+        setDataError(loadError instanceof Error ? loadError.message : String(loadError))
+      }
+    } finally {
+      if (requestId === dataRequestId.current) {
+        setDataLoading(false)
+        setDataRefreshing(false)
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (demoMode || !apiData) return
+    const requestId = ++dataRequestId.current
+    let current = true
+    setDataLoading(true)
+    setDataError('')
+    void Promise.all([apiData.listProducts(), apiData.listOrders()])
+      .then(([products, nextOrders]) => {
+        if (!current || requestId !== dataRequestId.current) return
+        setCatalog({ categories: categoriesFromProducts(products), products })
+        setOrders(normalizeDemoOrders(nextOrders))
+      })
+      .catch((loadError: unknown) => {
+        if (current && requestId === dataRequestId.current) {
+          setDataError(loadError instanceof Error ? loadError.message : String(loadError))
+        }
+      })
+      .finally(() => {
+        if (current && requestId === dataRequestId.current) setDataLoading(false)
+      })
+    return () => {
+      current = false
+      if (requestId === dataRequestId.current) dataRequestId.current += 1
+    }
+  }, [apiData, demoMode])
 
   useEffect(() => {
     if (route.path !== '/orders') setSelectedOrderId(undefined)
@@ -150,12 +265,39 @@ function PartnerPortal({
       businessName: config.partner.name,
       partnerType: config.partner.type,
       phone: config.partner.contactPhone ?? '',
-      address: firstShop?.address ?? '',
+      address: formatShopAddress(firstShop?.address),
     })
     setStoreOpen(firstShop?.status === 'active')
-    if (!catalog) setCatalog({ categories: [], products: [] })
+    setOperatingHours(hoursFromShop(firstShop))
+    if (demoMode && !catalog) setCatalog({ categories: [], products: [] })
     setInitialized(true)
-  }, [catalog, config, initialized])
+  }, [catalog, config, demoMode, initialized])
+
+  useEffect(() => {
+    if (demoMode || !apiData || !selectedOrderId) {
+      setSelectedOrderDetails(undefined)
+      setOrderDetailsError('')
+      return
+    }
+    let current = true
+    setOrderDetailsLoading(true)
+    setOrderDetailsError('')
+    void apiData.getOrder(selectedOrderId)
+      .then((order) => {
+        if (current) setSelectedOrderDetails(order)
+      })
+      .catch((loadError: unknown) => {
+        if (current) {
+          setOrderDetailsError(loadError instanceof Error ? loadError.message : String(loadError))
+        }
+      })
+      .finally(() => {
+        if (current) setOrderDetailsLoading(false)
+      })
+    return () => {
+      current = false
+    }
+  }, [apiData, demoMode, selectedOrderId])
 
   function handleNavigate(path: string) {
     setSelectedOrderId(undefined)
@@ -164,10 +306,51 @@ function PartnerPortal({
 
   function openOrder(orderId: string) {
     setSelectedOrderId(orderId)
+    setSelectedOrderDetails(undefined)
     navigate('/orders')
   }
 
   function updateOrderStatus(orderId: string, status: OrderStatus) {
+    if (!demoMode) {
+      if (!apiData || orderActionInFlight.current) return
+      orderActionInFlight.current = true
+      setSavingOrderId(orderId)
+      setDataError('')
+      setOrderActionNotice('')
+      void (async () => {
+        try {
+          await apiData.setOrderStatus(orderId, status)
+          setOrderActionNotice('Order status saved.')
+          try {
+            setOrders(normalizeDemoOrders(await apiData.listOrders()))
+            setDataError('')
+          } catch (refreshError) {
+            setDataError(
+              `Order status was saved, but the refreshed order list could not be loaded. The previous order data is still shown. ${
+                refreshError instanceof Error ? refreshError.message : String(refreshError)
+              }`,
+            )
+          }
+          if (selectedOrderId === orderId) {
+            try {
+              setSelectedOrderDetails(await apiData.getOrder(orderId))
+              setOrderDetailsError('')
+            } catch (detailError) {
+              setSelectedOrderDetails(undefined)
+              setOrderDetailsError(
+                detailError instanceof Error ? detailError.message : String(detailError),
+              )
+            }
+          }
+        } catch (updateError) {
+          setDataError(updateError instanceof Error ? updateError.message : String(updateError))
+        } finally {
+          orderActionInFlight.current = false
+          setSavingOrderId(undefined)
+        }
+      })()
+      return
+    }
     const timestamp = new Date().toLocaleTimeString('en-IN', {
       hour: 'numeric',
       minute: '2-digit',
@@ -183,6 +366,7 @@ function PartnerPortal({
   }
 
   function updateOrderDeliveryStatus(orderId: string, status: RiderStatus) {
+    if (!demoMode) return
     const timestamp = new Date().toLocaleTimeString('en-IN', {
       hour: 'numeric',
       minute: '2-digit',
@@ -243,7 +427,21 @@ function PartnerPortal({
     )
   }
 
-  if (!storeProfile || !catalog) {
+  if (!demoMode && !catalog && dataError) {
+    return (
+      <main className="main-content">
+        <section className="placeholder-page" role="alert">
+          <h1>Partner data unavailable</h1>
+          <p className="page-description">{dataError}</p>
+          <button className="store-primary-button" onClick={() => void reloadPartnerData()} type="button">
+            Retry
+          </button>
+        </section>
+      </main>
+    )
+  }
+
+  if (!storeProfile || !catalog || dataLoading) {
     return (
       <LoadingPage
         title={t('config.loadingTitle')}
@@ -261,7 +459,14 @@ function PartnerPortal({
         storeOpen={storeOpen}
         onNavigate={handleNavigate}
         onOpenOrder={openOrder}
-        onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
+        canToggleStore={demoMode}
+        showSalesSummary={demoMode}
+        storeStatusLabel={demoMode
+          ? storeOpen ? 'open' : 'closed'
+          : config.shops[0]?.status ?? 'unknown'}
+        onToggleStore={() => {
+          if (demoMode) setStoreOpen((isOpen) => !isOpen)
+        }}
       />
     )
   } else if (route.path === '/orders') {
@@ -271,9 +476,32 @@ function PartnerPortal({
         onSimulateOrder={simulateNewOrder}
         demoMode={demoMode}
         canSimulateOrder={catalog.products.length > 0}
+        savingOrderId={savingOrderId}
+        isRefreshing={dataRefreshing}
+        onRefresh={() => void reloadPartnerData()}
+        actionNotice={orderActionNotice}
+        partnerManaged={!demoMode}
+        orderDetails={selectedOrderDetails}
+        orderDetailsLoading={orderDetailsLoading}
+        orderDetailsError={orderDetailsError}
+        onRetryOrderDetails={() => {
+          if (!selectedOrderId || !apiData) return
+          setSelectedOrderDetails(undefined)
+          setOrderDetailsError('')
+          setOrderDetailsLoading(true)
+          void apiData.getOrder(selectedOrderId)
+            .then(setSelectedOrderDetails)
+            .catch((loadError: unknown) => {
+              setOrderDetailsError(loadError instanceof Error ? loadError.message : String(loadError))
+            })
+            .finally(() => setOrderDetailsLoading(false))
+        }}
         onDeliveryStatusChange={updateOrderDeliveryStatus}
         onStatusChange={updateOrderStatus}
-        onSelectOrder={setSelectedOrderId}
+        onSelectOrder={(orderId) => {
+          setSelectedOrderId(orderId)
+          setSelectedOrderDetails(undefined)
+        }}
         selectedOrderId={selectedOrderId}
       />
     )
@@ -287,6 +515,9 @@ function PartnerPortal({
         allowedUnits={partnerTypes[config.partner.type].units}
         extraProductFields={partnerTypes[config.partner.type].extraProductFields}
         categories={catalog.categories}
+        shops={config.shops.map(({ id, name }) => ({ id, name }))}
+        isRefreshing={dataRefreshing}
+        onRefresh={() => void reloadPartnerData()}
         onCategoriesChange={(update: (current: ProductCategory[]) => ProductCategory[]) =>
           setCatalog((current) => {
             if (!current) return current
@@ -295,9 +526,37 @@ function PartnerPortal({
             return { ...current, categories }
           })}
         onSaveProduct={async (draft, productId) => {
-          const saved = demoMode
-            ? await partnerData.saveProduct(draft, productId)
-            : { ...draft, id: productId ?? `product-${crypto.randomUUID()}` }
+          const service = demoMode ? partnerData : apiData
+          if (!service) throw new Error('Partner API is unavailable.')
+          const saved = await service.saveProduct(draft, productId)
+          if (!demoMode) {
+            setCatalog((current) => {
+              const existingProducts = current?.products ?? []
+              const exists = existingProducts.some((product) => product.id === saved.id)
+              return {
+                categories: categoriesFromProducts(
+                  exists
+                    ? existingProducts.map((product) => product.id === saved.id ? saved : product)
+                    : [...existingProducts, saved],
+                ),
+                products: exists
+                  ? existingProducts.map((product) => product.id === saved.id ? saved : product)
+                  : [...existingProducts, saved],
+              }
+            })
+            try {
+              const products = await service.listProducts()
+              setCatalog({ categories: categoriesFromProducts(products), products })
+              setDataError('')
+            } catch (refreshError) {
+              setDataError(
+                `Product was saved, but the refreshed product list could not be loaded. The saved product is still shown. ${
+                  refreshError instanceof Error ? refreshError.message : String(refreshError)
+                }`,
+              )
+            }
+            return
+          }
           setCatalog((current) => {
             if (!current) return current
             const exists = current.products.some((product) => product.id === saved.id)
@@ -333,6 +592,57 @@ function PartnerPortal({
             }
             return { ...current, products }
           })}
+        onSetProductAvailability={async (productId, available) => {
+          const service = demoMode ? partnerData : apiData
+          if (!service) throw new Error('Partner API is unavailable.')
+          await service.setProductAvailability(productId, available)
+          if (!demoMode) {
+            setCatalog((current) => current && ({
+              ...current,
+              products: current.products.map((product) =>
+                product.id === productId ? { ...product, available } : product,
+              ),
+            }))
+            try {
+              const products = await service.listProducts()
+              setCatalog({ categories: categoriesFromProducts(products), products })
+              setDataError('')
+            } catch (refreshError) {
+              setDataError(
+                `Availability was saved, but the product list could not be refreshed. The saved value is still shown. ${
+                  refreshError instanceof Error ? refreshError.message : String(refreshError)
+                }`,
+              )
+            }
+          }
+        }}
+        onSetProductStatus={async (productId, status) => {
+          const service = demoMode ? partnerData : apiData
+          if (!service) throw new Error('Partner API is unavailable.')
+          await service.setProductStatus(productId, status)
+          if (!demoMode) {
+            setCatalog((current) => current && ({
+              ...current,
+              products: current.products.map((product) =>
+                product.id === productId ? { ...product, status } : product,
+              ),
+            }))
+            try {
+              const products = await service.listProducts()
+              setCatalog({ categories: categoriesFromProducts(products), products })
+              setDataError('')
+            } catch (refreshError) {
+              setDataError(
+                `Product status was saved, but the product list could not be refreshed. The saved status is still shown. ${
+                  refreshError instanceof Error ? refreshError.message : String(refreshError)
+                }`,
+              )
+            }
+          }
+        }}
+        categoriesEditable={demoMode}
+        imageUploadEnabled={demoMode}
+        showThresholdControl={demoMode}
         products={catalog.products}
       />
     )
@@ -343,9 +653,13 @@ function PartnerPortal({
         onSaveHours={setOperatingHours}
         onSaveProfile={setStoreProfile}
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
+        readOnly={!demoMode}
         profile={storeProfile}
         storeOpen={storeOpen}
         demoMode={demoMode}
+        storeStatusLabel={demoMode
+          ? storeOpen ? 'open' : 'closed'
+          : config.shops[0]?.status ?? 'unknown'}
       />
     )
   } else if (route.path === '/reports') {
@@ -362,10 +676,14 @@ function PartnerPortal({
     page = (
       <SettingsWorkspace
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
+        canToggleStore={demoMode}
         operatingHours={operatingHours}
         profile={storeProfile}
         storeOpen={storeOpen}
         demoMode={demoMode}
+        storeStatusLabel={demoMode
+          ? storeOpen ? 'open' : 'closed'
+          : config.shops[0]?.status ?? 'unknown'}
       />
     )
   } else if (route.path === '/more') {
@@ -401,7 +719,12 @@ function PartnerPortal({
             {logoutError}
           </p>
         )}
-        {dataError && <p className="store-form-error" role="alert">{dataError}</p>}
+        {dataError && (
+          <p className="store-form-error" role="alert">
+            {dataError}{' '}
+            {!demoMode && <button onClick={() => void reloadPartnerData()} type="button">Retry data refresh</button>}
+          </p>
+        )}
         {page}
       </AppShell>
     </NewOrderAlertsProvider>

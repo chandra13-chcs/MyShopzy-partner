@@ -5,9 +5,48 @@ import type { StoreProfile as StoreProfileData } from './types'
 interface StoreProfileProps {
   onSave: (profile: StoreProfileData) => void
   profile: StoreProfileData
+  readOnly?: boolean
+  shop?: {
+    name: string
+    slug: string
+    status: string
+    address: Record<string, unknown> | null
+  }
+  contactEmail?: string | null
+  timezone?: string | null
 }
 
-export function StoreProfile({ onSave, profile }: StoreProfileProps) {
+function addressEntries(address: Record<string, unknown> | null | undefined) {
+  if (!address) return []
+  const addressKeys = new Set([
+    'address',
+    'formattedaddress',
+    'line1',
+    'line2',
+    'street',
+    'area',
+    'landmark',
+    'city',
+    'district',
+    'state',
+    'postalcode',
+    'pincode',
+    'country',
+  ])
+  return Object.entries(address).filter(([key, value]) =>
+    addressKeys.has(key.replace(/[_-]/g, '').toLowerCase()) &&
+    (typeof value === 'string' || typeof value === 'number'),
+  )
+}
+
+export function StoreProfile({
+  onSave,
+  profile,
+  readOnly = false,
+  shop,
+  contactEmail,
+  timezone,
+}: StoreProfileProps) {
   const { config } = usePartnerConfig()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(profile)
@@ -56,7 +95,7 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
           <h2 id="store-profile-heading">Business profile</h2>
           <p>Keep your store information up to date.</p>
         </div>
-        {!editing && (
+        {!editing && !readOnly && (
           <button
             className="store-secondary-button"
             onClick={startEditing}
@@ -129,6 +168,22 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
         </form>
       ) : (
         <dl className="store-profile-details">
+          {shop && (
+            <>
+              <div>
+                <dt>Shop name</dt>
+                <dd>{shop.name}</dd>
+              </div>
+              <div>
+                <dt>Shop identifier</dt>
+                <dd>{shop.slug}</dd>
+              </div>
+              <div>
+                <dt>Shop status</dt>
+                <dd>{shop.status}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Business name</dt>
             <dd>{profile.businessName}</dd>
@@ -139,16 +194,36 @@ export function StoreProfile({ onSave, profile }: StoreProfileProps) {
           </div>
           <div>
             <dt>Phone number</dt>
-            <dd>{profile.phone}</dd>
+            <dd>{profile.phone || 'Not provided'}</dd>
           </div>
+          {readOnly && (
+            <div>
+              <dt>Email</dt>
+              <dd>{contactEmail || 'Not provided'}</dd>
+            </div>
+          )}
+          {readOnly && (
+            <div>
+              <dt>Timezone</dt>
+              <dd>{timezone || 'Not configured'}</dd>
+            </div>
+          )}
           <div>
             <dt>Store address</dt>
-            <dd>{profile.address}</dd>
+            <dd>{profile.address || 'Not provided'}</dd>
           </div>
-          <div className="store-profile-description">
-            <dt>Description</dt>
-            <dd>{profile.description || 'No description added.'}</dd>
-          </div>
+          {shop && addressEntries(shop.address).map(([key, value]) => (
+            <div key={key}>
+              <dt>{key.replace(/([A-Z])/g, ' $1').replace(/[_-]/g, ' ')}</dt>
+              <dd>{String(value)}</dd>
+            </div>
+          ))}
+          {!readOnly && (
+            <div className="store-profile-description">
+              <dt>Description</dt>
+              <dd>{profile.description || 'No description added.'}</dd>
+            </div>
+          )}
         </dl>
       )}
     </section>
