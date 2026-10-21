@@ -24,6 +24,20 @@ function formatProductPrice(product: Product) {
   return unit ? `${price} / ${unit}` : price
 }
 
+function ProductThumbnail({ product }: { product: Product }) {
+  return (
+    <span className="product-thumbnail" aria-label={`${product.name} image`} role="img">
+      {product.imageUrl ? (
+        <img alt="" src={product.imageUrl} />
+      ) : (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M4 5.5h16v13H4zM7 15l3.5-3.5 2.5 2.5 2-2 2 3M8 9h.01" />
+        </svg>
+      )}
+    </span>
+  )
+}
+
 export function ProductList({
   categories,
   onAvailabilityChange,
@@ -54,8 +68,13 @@ export function ProductList({
             {products.map((product) => (
               <tr key={product.id}>
                 <td>
-                  <span className="product-name-cell">{product.name}</span>
-                  <span className="product-description-cell">{product.description || '—'}</span>
+                  <div className="product-name-cell-wrap">
+                    <ProductThumbnail product={product} />
+                    <span className="product-name-copy">
+                      <span className="product-name-cell">{product.name}</span>
+                      <span className="product-description-cell">{product.description || '—'}</span>
+                    </span>
+                  </div>
                 </td>
                 <td>{categoryName(product.categoryId)}</td>
                 <td className="product-price">{formatProductPrice(product)}</td>
@@ -114,9 +133,12 @@ export function ProductList({
         {products.map((product) => (
           <article className="product-card" key={product.id}>
             <div className="product-card-heading">
-              <div>
-                <h3>{product.name}</h3>
-                <p>{categoryName(product.categoryId)}</p>
+              <div className="product-card-title">
+                <ProductThumbnail product={product} />
+                <div>
+                  <h3>{product.name}</h3>
+                  <p>{categoryName(product.categoryId)}</p>
+                </div>
               </div>
               <strong>{formatProductPrice(product)}</strong>
             </div>

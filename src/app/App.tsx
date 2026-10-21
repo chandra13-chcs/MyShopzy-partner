@@ -294,6 +294,21 @@ function PartnerPortal({
             if (demoMode) persistDemoRequest(partnerData.saveCategories(categories))
             return { ...current, categories }
           })}
+        onSaveProduct={async (draft, productId) => {
+          const saved = demoMode
+            ? await partnerData.saveProduct(draft, productId)
+            : { ...draft, id: productId ?? `product-${crypto.randomUUID()}` }
+          setCatalog((current) => {
+            if (!current) return current
+            const exists = current.products.some((product) => product.id === saved.id)
+            return {
+              ...current,
+              products: exists
+                ? current.products.map((product) => product.id === saved.id ? saved : product)
+                : [...current.products, saved],
+            }
+          })
+        }}
         onProductsChange={(update: (current: Product[]) => Product[]) =>
           setCatalog((current) => {
             if (!current) return current

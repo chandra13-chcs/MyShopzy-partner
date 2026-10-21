@@ -13,6 +13,7 @@ export interface Product {
   available: boolean
   stockQuantity: number
   restockThreshold: number
+  imageUrl?: string
   extraFields?: Record<string, string | number | boolean>
   variants?: ProductVariant[]
 }

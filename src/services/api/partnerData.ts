@@ -1,6 +1,7 @@
 import type { DemoOrder, OrderStatus, TrackedOrderStatus } from '../../features/orders/types'
 import type { Product, ProductDraft, ProductCategory } from '../../features/products/types'
 import type { PartnerTypeCode } from '../../types/partner'
+import { processProductImage } from './imageProcess'
 
 export interface PartnerAccount {
   partnerId: string
@@ -15,6 +16,8 @@ export interface PartnerAccount {
 export interface PartnerDataService {
   getAccount(): Promise<PartnerAccount>
   listProducts(): Promise<Product[]>
+  // The demo/local-preview fallback returns a processed data URL; production can return an https URL from image storage without changing callers.
+  uploadProductImage(file: File): Promise<string>
   saveProduct(product: ProductDraft, productId?: string): Promise<Product>
   setProductAvailability(productId: string, available: boolean): Promise<void>
   deleteProduct(productId: string): Promise<void>
@@ -38,6 +41,8 @@ function currentService() {
 export const partnerData = {
   getAccount: () => currentService().getAccount(),
   listProducts: () => currentService().listProducts(),
+  uploadProductImage: (file: File) =>
+    service ? service.uploadProductImage(file) : processProductImage(file),
   saveProduct: (product: ProductDraft, productId?: string) =>
     currentService().saveProduct(product, productId),
   setProductAvailability: (productId: string, available: boolean) =>

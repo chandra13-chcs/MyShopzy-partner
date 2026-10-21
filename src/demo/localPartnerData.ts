@@ -1,6 +1,7 @@
 import type { PartnerDataService, PartnerAccount } from '../services/api/partnerData'
 import type { DemoOrder, TrackedOrderStatus } from '../features/orders/types'
 import type { Product, ProductDraft, ProductCategory } from '../features/products/types'
+import { processProductImage } from '../services/api/imageProcess'
 
 let activeAccount: PartnerAccount
 
@@ -20,10 +21,16 @@ function storageKey() {
   return `myshopzy_demo_partner_${activeAccount.partnerId}`
 }
 
-function persist() {
+function persist(nextAccount = activeAccount) {
   try {
-    window.localStorage.setItem(storageKey(), JSON.stringify(activeAccount))
+    window.localStorage.setItem(storageKey(), JSON.stringify(nextAccount))
   } catch (error) {
+    if (
+      error instanceof DOMException &&
+      (error.name === 'QuotaExceededError' || error.code === 22 || error.code === 1014)
+    ) {
+      throw new Error('Storage is full. Remove an image or product and try again')
+    }
     throw new Error(`Demo account storage could not be saved: ${String(error)}`)
   }
 }
@@ -37,27 +44,36 @@ export function createLocalPartnerData(account: PartnerAccount): PartnerDataServ
     async listProducts() {
       return structuredClone(activeAccount.products)
     },
+    async uploadProductImage(file: File) {
+      return processProductImage(file)
+    },
     async saveProduct(draft: ProductDraft, productId?: string) {
       const saved: Product = {
         ...draft,
         id: productId ?? `product-${crypto.randomUUID()}`,
       }
       const index = activeAccount.products.findIndex((item) => item.id === productId)
-      activeAccount.products = index < 0
+      const products = index < 0
         ? [...activeAccount.products, saved]
         : activeAccount.products.map((item) => item.id === productId ? saved : item)
-      persist()
+      const nextAccount = { ...activeAccount, products }
+      persist(nextAccount)
+      activeAccount = nextAccount
       return structuredClone(saved)
     },
     async setProductAvailability(productId: string, available: boolean) {
-      activeAccount.products = activeAccount.products.map((product) =>
+      const products = activeAccount.products.map((product) =>
         product.id === productId ? { ...product, available } : product,
       )
-      persist()
+      const nextAccount = { ...activeAccount, products }
+      persist(nextAccount)
+      activeAccount = nextAccount
     },
     async deleteProduct(productId: string) {
-      activeAccount.products = activeAccount.products.filter((product) => product.id !== productId)
-      persist()
+      const products = activeAccount.products.filter((product) => product.id !== productId)
+      const nextAccount = { ...activeAccount, products }
+      persist(nextAccount)
+      activeAccount = nextAccount
     },
     async listOrders() {
       return structuredClone(activeAccount.orders)
@@ -90,12 +106,17 @@ export function createLocalPartnerData(account: PartnerAccount): PartnerDataServ
       persist()
     },
     async saveCategories(categories: ProductCategory[]) {
-      activeAccount.categories = structuredClone(categories)
-      persist()
+      const nextAccount = { ...activeAccount, categories: structuredClone(categories) }
+      persist(nextAccount)
+      activeAccount = nextAccount
     },
     async addOrder(order: DemoOrder) {
-      activeAccount.orders = [structuredClone(order), ...activeAccount.orders]
-      persist()
+      const nextAccount = {
+        ...activeAccount,
+        orders: [structuredClone(order), ...activeAccount.orders],
+      }
+      persist(nextAccount)
+      activeAccount = nextAccount
     },
   }
 }

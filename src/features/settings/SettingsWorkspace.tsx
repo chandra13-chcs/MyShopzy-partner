@@ -47,9 +47,26 @@ export default function SettingsWorkspace({
     ...initialNotificationPreferences,
   }))
   const [activeDialog, setActiveDialog] = useState<SettingsDialogType>()
+  const [resetError, setResetError] = useState('')
 
   function updatePreference(key: keyof Preferences, enabled: boolean) {
     setPreferences((current) => ({ ...current, [key]: enabled }))
+  }
+
+  function resetDemoData() {
+    if (!window.confirm('Remove all local demo data and reload the app?')) return
+    setResetError('')
+    try {
+      const demoKeys = Object.keys(window.localStorage).filter((key) =>
+        key.startsWith('myshopzy_demo_'),
+      )
+      for (const key of demoKeys) window.localStorage.removeItem(key)
+      window.location.reload()
+    } catch (error) {
+      setResetError(
+        `Demo data could not be reset: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
   }
 
   const dialog = activeDialog ? dialogContent[activeDialog] : undefined
@@ -86,10 +103,13 @@ export default function SettingsWorkspace({
             <DemoAccountSection
               businessName={profile.businessName}
               onOpenLogout={() => setActiveDialog('logout')}
+              onResetDemoData={resetDemoData}
             />
           )}
         </div>
       </div>
+
+      {resetError && <p className="store-form-error" role="alert">{resetError}</p>}
 
       {dialog && (
         <SettingsDialog

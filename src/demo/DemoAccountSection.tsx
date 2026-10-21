@@ -1,17 +1,19 @@
 interface DemoAccountSectionProps {
   businessName: string
   onOpenLogout: () => void
+  onResetDemoData: () => void
 }
 
 export function DemoAccountSection({
   businessName,
   onOpenLogout,
+  onResetDemoData,
 }: DemoAccountSectionProps) {
   return (
     <section className="settings-card" aria-labelledby="demo-account-heading">
       <div className="settings-section-heading">
         <span className="settings-section-icon account-icon" aria-hidden="true">D</span>
-        <div>
+        <div className="settings-danger-actions">
           <h2 id="demo-account-heading">Demo account</h2>
           <p>Sample account details. No real sign-in is active.</p>
         </div>
@@ -29,15 +31,24 @@ export function DemoAccountSection({
       <div className="settings-danger-zone">
         <div>
           <strong>Account actions</strong>
-          <span>Signing out is a demo-only interaction.</span>
+          <span>These actions only affect local demo data.</span>
         </div>
-        <button
-          className="settings-button settings-button-danger"
-          onClick={onOpenLogout}
-          type="button"
-        >
-          Log out
-        </button>
+        <div>
+          <button
+            className="settings-button settings-button-danger"
+            onClick={onOpenLogout}
+            type="button"
+          >
+            Log out
+          </button>
+          <button
+            className="settings-button settings-button-danger"
+            onClick={onResetDemoData}
+            type="button"
+          >
+            Reset demo data
+          </button>
+        </div>
       </div>
     </section>
   )

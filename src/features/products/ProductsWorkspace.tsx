@@ -27,6 +27,7 @@ interface ProductsWorkspaceProps {
   products: Product[]
   onCategoriesChange: (update: (current: ProductCategory[]) => ProductCategory[]) => void
   onProductsChange: (update: (current: Product[]) => Product[]) => void
+  onSaveProduct: (draft: ProductDraft, productId?: string) => Promise<void>
 }
 
 function isProductFilter(value: string): value is ProductFilter {
@@ -44,6 +45,7 @@ export default function ProductsWorkspace({
   products,
   onCategoriesChange,
   onProductsChange,
+  onSaveProduct,
 }: ProductsWorkspaceProps) {
   const [tab, setTab] = useState<WorkspaceTab>('products')
   const [filter, setFilter] = useState<ProductFilter>('all')
@@ -67,19 +69,8 @@ export default function ProductsWorkspace({
       ),
   )
 
-  function saveProduct(draft: ProductDraft) {
-    if (productToEdit) {
-      onProductsChange((current) =>
-        current.map((product) =>
-          product.id === productToEdit.id ? { ...draft, id: product.id } : product,
-        ),
-      )
-    } else {
-      onProductsChange((current) => [
-        ...current,
-        { ...draft, id: `product-${crypto.randomUUID()}` },
-      ])
-    }
+  async function saveProduct(draft: ProductDraft) {
+    await onSaveProduct(draft, productToEdit?.id)
     closeProductForm()
   }
 

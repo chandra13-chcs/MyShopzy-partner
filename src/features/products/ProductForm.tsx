@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import type { PartnerTypeConfig } from '../../config/partnerTypes'
+import { partnerData } from '../../services/api/partnerData'
 import { Dialog } from './Dialog'
 import type { Product, ProductCategory, ProductDraft, ProductVariant } from './types'
 
@@ -11,7 +12,7 @@ interface ProductFormProps {
   categories: ProductCategory[]
   product?: Product
   onCancel: () => void
-  onSave: (product: ProductDraft) => void
+  onSave: (product: ProductDraft) => Promise<void>
 }
 
 export function ProductForm({
@@ -56,9 +57,33 @@ export function ProductForm({
       : [{ label: 'Regular', unit: suggestedUnits[0] ?? '', quantity: '1', price: '0', stock: '0' }],
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? '')
+  const [imageError, setImageError] = useState('')
+  const [formError, setFormError] = useState('')
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const title = product ? 'Edit product' : 'Add product'
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+
+  async function handleImageSelection(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setImageError('')
+    setFormError('')
+    setIsProcessingImage(true)
+    try {
+      setImageUrl(await partnerData.uploadProductImage(file))
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setIsProcessingImage(false)
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (isProcessingImage || isSaving) return
     const parsedPrice = Number(price)
     const parsedStockQuantity = Number(stockQuantity)
     const parsedRestockThreshold = Number(restockThreshold)
@@ -109,24 +134,33 @@ export function ProductForm({
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
-    onSave({
-      name: name.trim(),
-      categoryId,
-      price: parsedPrice,
-      ...(savedUnit ? { unit: savedUnit } : {}),
-      description: description.trim(),
-      available: available && parsedStockQuantity > 0,
-      stockQuantity: parsedStockQuantity,
-      restockThreshold: parsedRestockThreshold,
-      extraFields: extraValues,
-      variants: variants.map((variant): ProductVariant => ({
-        label: variant.label.trim(),
-        unit: variant.unit,
-        quantity: Number(variant.quantity),
-        price: Number(variant.price),
-        stock: Number(variant.stock),
-      })),
-    })
+    setFormError('')
+    setIsSaving(true)
+    try {
+      await onSave({
+        name: name.trim(),
+        categoryId,
+        price: parsedPrice,
+        ...(savedUnit ? { unit: savedUnit } : {}),
+        description: description.trim(),
+        available: available && parsedStockQuantity > 0,
+        stockQuantity: parsedStockQuantity,
+        restockThreshold: parsedRestockThreshold,
+        ...(imageUrl ? { imageUrl } : {}),
+        extraFields: extraValues,
+        variants: variants.map((variant): ProductVariant => ({
+          label: variant.label.trim(),
+          unit: variant.unit,
+          quantity: Number(variant.quantity),
+          price: Number(variant.price),
+          stock: Number(variant.stock),
+        })),
+      })
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -363,11 +397,55 @@ export function ProductForm({
 
         <div className="products-field">
           <span>Product image</span>
-          <div className="image-placeholder">
-            <span aria-hidden="true">＋</span>
-            <span>Image placeholder</span>
-            <small>Image upload will be available later</small>
+          <div className="product-image-picker">
+            <div className="product-image-preview">
+              {imageUrl ? (
+                <img alt="Product preview" src={imageUrl} />
+              ) : (
+                <span aria-hidden="true" className="product-image-empty-icon">▧</span>
+              )}
+            </div>
+            <div className="product-image-actions">
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                aria-describedby={imageError ? 'product-image-error' : undefined}
+                aria-label="Choose product image"
+                className="sr-only"
+                onChange={(event) => void handleImageSelection(event)}
+                ref={imageInputRef}
+                type="file"
+              />
+              <button
+                className="products-button products-button-secondary"
+                disabled={isProcessingImage}
+                onClick={() => imageInputRef.current?.click()}
+                type="button"
+              >
+                {imageUrl ? 'Replace' : 'Choose image'}
+              </button>
+              {imageUrl && (
+                <button
+                  className="products-button products-button-secondary"
+                  disabled={isProcessingImage}
+                  onClick={() => {
+                    setImageUrl('')
+                    setImageError('')
+                  }}
+                  type="button"
+                >
+                  Remove
+                </button>
+              )}
+              {isProcessingImage && <small aria-live="polite">Processing image…</small>}
+            </div>
           </div>
+          {imageError && (
+            <span className="products-field-error" id="product-image-error" role="alert">
+              {imageError}
+            </span>
+          )}
+          {formError && <span className="products-field-error" role="alert">{formError}</span>}
+          <small className="product-image-help">JPEG, PNG, or WebP. Maximum 5 MB.</small>
         </div>
 
         <label className="availability-control">
@@ -387,8 +465,12 @@ export function ProductForm({
           <button className="products-button products-button-secondary" onClick={onCancel} type="button">
             Cancel
           </button>
-          <button className="products-button products-button-primary" type="submit">
-            Save Product
+          <button
+            className="products-button products-button-primary"
+            disabled={isProcessingImage || isSaving}
+            type="submit"
+          >
+            {isSaving ? 'Saving…' : isProcessingImage ? 'Processing image…' : 'Save Product'}
           </button>
         </div>
       </form>
