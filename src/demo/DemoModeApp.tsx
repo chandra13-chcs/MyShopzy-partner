@@ -2,31 +2,32 @@ import { useEffect, useState } from 'react'
 import { LanguageProvider } from '../i18n/LanguageProvider'
 import { partnerData, configurePartnerData, type PartnerAccount } from '../services/api/partnerData'
 import { PreviewPortal } from '../app/App'
-import { bootstrapDemoAccount } from './bootstrap'
 import { createLocalPartnerData } from './localPartnerData'
 import { createSimulatedOrder } from './simulateOrder'
 
-function DemoModePortal() {
+function DemoModePortal({
+  initialAccount,
+  bootstrapError,
+}: {
+  initialAccount?: PartnerAccount
+  bootstrapError?: string
+}) {
   const [account, setAccount] = useState<PartnerAccount | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(bootstrapError ?? '')
 
   useEffect(() => {
-    try {
-      const loadedAccount = bootstrapDemoAccount()
-      configurePartnerData(createLocalPartnerData(loadedAccount))
-      void Promise.all([
-        partnerData.getAccount(),
-        partnerData.listProducts(),
-        partnerData.listOrders(),
-      ]).then(([accountData, products, orders]) => {
-        setAccount({ ...accountData, products, orders })
-      }).catch((loadError: unknown) => {
-        setError(loadError instanceof Error ? loadError.message : String(loadError))
-      })
-    } catch (bootstrapError) {
-      setError(bootstrapError instanceof Error ? bootstrapError.message : String(bootstrapError))
-    }
-  }, [])
+    if (!initialAccount || bootstrapError) return
+    configurePartnerData(createLocalPartnerData(initialAccount))
+    void Promise.all([
+      partnerData.getAccount(),
+      partnerData.listProducts(),
+      partnerData.listOrders(),
+    ]).then(([accountData, products, orders]) => {
+      setAccount({ ...accountData, products, orders })
+    }).catch((loadError: unknown) => {
+      setError(loadError instanceof Error ? loadError.message : String(loadError))
+    })
+  }, [bootstrapError, initialAccount])
 
   if (error) {
     return (
@@ -50,10 +51,16 @@ function DemoModePortal() {
   return <PreviewPortal account={account} demoMode simulateOrder={createSimulatedOrder} />
 }
 
-export default function DemoModeApp() {
+export default function DemoModeApp({
+  account,
+  bootstrapError,
+}: {
+  account?: PartnerAccount
+  bootstrapError?: string
+}) {
   return (
     <LanguageProvider>
-      <DemoModePortal />
+      <DemoModePortal initialAccount={account} bootstrapError={bootstrapError} />
     </LanguageProvider>
   )
 }

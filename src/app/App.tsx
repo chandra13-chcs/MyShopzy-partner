@@ -379,6 +379,7 @@ function PartnerPortal({
         storeOpen={storeOpen}
         demoMode={demoMode}
         navigationLabel={partnerTypes[config.partner.type].navigationLabel}
+        accountTypeLabel={config.profile.label}
       >
         {logoutError && (
           <p className="store-form-error" role="alert">

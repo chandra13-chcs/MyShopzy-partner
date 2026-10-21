@@ -199,7 +199,7 @@ export function usePartnerOrderStatusLabel() {
   const { config } = usePartnerConfig()
   return useCallback(
     (status: string, fallback: string) => {
-      const wording = config ? partnerTypes[config.partner.type].orderStatusWording : null
+      const wording = config?.profile.orderStatusLabels
       if (status === 'ACCEPTED') return wording?.accepted ?? fallback
       if (status === 'PREPARING') return wording?.preparing ?? fallback
       if (status === 'READY_FOR_PICKUP') return wording?.ready ?? fallback

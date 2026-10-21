@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
 import './index.css'
 import App from './app/App.tsx'
+import { bootstrapDemoAccount } from './demo/bootstrap'
+import type { PartnerAccount } from './services/api/partnerData'
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
@@ -10,10 +12,17 @@ const audience = import.meta.env.VITE_AUTH0_AUDIENCE
 const root = createRoot(document.getElementById('root')!)
 
 if (import.meta.env.VITE_DEMO_MODE === 'true') {
+  let demoAccount: PartnerAccount | undefined
+  let bootstrapError: string | undefined
+  try {
+    demoAccount = bootstrapDemoAccount()
+  } catch (error) {
+    bootstrapError = error instanceof Error ? error.message : String(error)
+  }
   void import('./demo/DemoModeApp').then(({ default: DemoModeApp }) => {
     root.render(
       <StrictMode>
-        <DemoModeApp />
+        <DemoModeApp account={demoAccount} bootstrapError={bootstrapError} />
       </StrictMode>,
     )
   }).catch((error: unknown) => {

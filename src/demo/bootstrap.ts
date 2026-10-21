@@ -3,6 +3,8 @@ import type { PartnerAccount } from '../services/api/partnerData'
 
 export const activeAccountStorageKey = 'myshopzy_demo_active'
 const accountKey = (partnerId: string) => `myshopzy_demo_partner_${partnerId}`
+const validPartnerId = /^[A-Za-z0-9_-]{1,64}$/
+const demoQueryParams = ['partnerId', 'type', 'name', 'shop']
 
 function safeRead(key: string) {
   try {
@@ -81,40 +83,51 @@ function createAccount(
 
 export function bootstrapDemoAccount(): PartnerAccount {
   const url = new URL(window.location.href)
-  const hasParams = ['partnerId', 'type', 'name', 'shop'].some((key) =>
-    url.searchParams.has(key),
-  )
+  const requestedPartnerId = url.searchParams.get('partnerId')
+  const requestedType = url.searchParams.get('type')
+  const requestedName = sanitize(url.searchParams.get('name'), 80)
+  const requestedShop = sanitize(url.searchParams.get('shop'), 80)
+  const hasParams = demoQueryParams.some((key) => url.searchParams.has(key))
   let account: PartnerAccount | null = null
 
   if (hasParams) {
-    const partnerId = sanitize(url.searchParams.get('partnerId'), 100)
-    if (partnerId) {
-      const existing = parseAccount(safeRead(accountKey(partnerId)), partnerId)
-      if (existing) {
-        account = existing
-        safeWrite(accountKey(partnerId), JSON.stringify(existing))
-      } else {
-        const requestedType = url.searchParams.get('type')
-        const type = isPartnerTypeCode(requestedType) ? requestedType : 'restaurant'
-        account = createAccount(
-          partnerId,
-          type,
-          sanitize(url.searchParams.get('name'), 80),
-          sanitize(url.searchParams.get('shop'), 80),
+    try {
+      if (
+        requestedPartnerId &&
+        validPartnerId.test(requestedPartnerId) &&
+        isPartnerTypeCode(requestedType)
+      ) {
+        const existing = parseAccount(
+          safeRead(accountKey(requestedPartnerId)),
+          requestedPartnerId,
         )
-        safeWrite(accountKey(partnerId), JSON.stringify(account))
+        if (existing) {
+          account = existing
+        } else {
+          account = createAccount(
+            requestedPartnerId,
+            requestedType,
+            requestedName,
+            requestedShop,
+          )
+          safeWrite(accountKey(requestedPartnerId), JSON.stringify(account))
+        }
+        safeWrite(activeAccountStorageKey, requestedPartnerId)
       }
-      safeWrite(activeAccountStorageKey, partnerId)
+    } finally {
+      for (const key of demoQueryParams) url.searchParams.delete(key)
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${url.pathname}${url.search}${url.hash}`,
+      )
     }
-    url.search = ''
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.hash}`)
   }
 
   if (!account) {
     const activePartnerId = safeRead(activeAccountStorageKey)
-    if (activePartnerId) {
+    if (activePartnerId && validPartnerId.test(activePartnerId)) {
       account = parseAccount(safeRead(accountKey(activePartnerId)), activePartnerId)
-      if (account) safeWrite(accountKey(account.partnerId), JSON.stringify(account))
     }
   }
   if (!account) {

@@ -15,6 +15,7 @@ interface AppShellProps {
   storeOpen: boolean
   demoMode?: boolean
   navigationLabel?: string
+  accountTypeLabel?: string
 }
 
 const routeTranslationKeys: Record<string, TranslationKey> = {
@@ -102,6 +103,7 @@ export function AppShell({
   storeOpen,
   demoMode = false,
   navigationLabel,
+  accountTypeLabel,
 }: AppShellProps) {
   const { t } = useLanguage()
   const { alerts, dismissAlert } = useNewOrderAlerts()
@@ -138,7 +140,7 @@ export function AppShell({
           </span>
           <span className="business-copy">
             <strong>{businessName}</strong>
-            <span>{t('app.partnerAccount')}</span>
+            <span>{accountTypeLabel ?? t('app.partnerAccount')}</span>
           </span>
         </div>
         <p className="nav-heading">{t('nav.workspace')}</p>
