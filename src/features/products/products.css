@@ -460,6 +460,36 @@
   gap: 12px;
 }
 
+.products-variants {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #edf0f5;
+}
+
+.products-variants-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.products-variants-heading h3 {
+  margin: 0;
+  color: #2c394f;
+  font-size: 13px;
+}
+
+.products-variant-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+}
+
 .products-field {
   display: grid;
   min-width: 0;
@@ -487,6 +517,13 @@
   font: inherit;
   font-size: 12px;
   font-weight: 400;
+}
+
+.products-field input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  justify-self: start;
+  accent-color: var(--brand-primary);
 }
 
 .products-field textarea {

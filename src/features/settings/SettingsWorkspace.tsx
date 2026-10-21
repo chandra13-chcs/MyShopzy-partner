@@ -2,11 +2,11 @@ import { useState } from 'react'
 import type { OperatingHours, StoreProfile } from '../store/types'
 import { AppInformation } from './AppInformation'
 import { BusinessPreferences } from './BusinessPreferences'
-import { DemoAccountSection } from './DemoAccountSection'
+import { DemoAccountSection } from '../../demo/DemoAccountSection'
 import { LegalSection } from './LegalSection'
 import { LanguagePreference } from './LanguagePreference'
 import { NotificationPreferences } from './NotificationPreferences'
-import { initialNotificationPreferences } from './settingsDemoData'
+import { initialNotificationPreferences } from '../../config/notificationPreferences'
 import { SettingsDialog } from './SettingsDialog'
 import type { NotificationPreferences as Preferences, SettingsDialogType } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
@@ -17,6 +17,7 @@ interface SettingsWorkspaceProps {
   operatingHours: OperatingHours
   profile: StoreProfile
   storeOpen: boolean
+  demoMode?: boolean
 }
 
 const dialogContent: Record<SettingsDialogType, { title: string; body: string }> = {
@@ -39,6 +40,7 @@ export default function SettingsWorkspace({
   operatingHours,
   profile,
   storeOpen,
+  demoMode = false,
 }: SettingsWorkspaceProps) {
   const { t } = useLanguage()
   const [preferences, setPreferences] = useState<Preferences>(() => ({
@@ -62,7 +64,7 @@ export default function SettingsWorkspace({
             {t('settings.description')}
           </p>
         </div>
-        <span className="demo-tag demo-tag-large">LOCAL DEMO</span>
+        {demoMode && <span className="demo-tag demo-tag-large">LOCAL DEMO</span>}
       </div>
 
       <div className="settings-grid">
@@ -80,10 +82,12 @@ export default function SettingsWorkspace({
         <AppInformation />
         <LegalSection onOpen={setActiveDialog} />
         <div className="settings-grid-wide">
-          <DemoAccountSection
-            businessName={profile.businessName}
-            onOpenLogout={() => setActiveDialog('logout')}
-          />
+          {demoMode && (
+            <DemoAccountSection
+              businessName={profile.businessName}
+              onOpenLogout={() => setActiveDialog('logout')}
+            />
+          )}
         </div>
       </div>
 

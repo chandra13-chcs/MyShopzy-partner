@@ -11,6 +11,7 @@ import {
 import { useAuth0 } from '@auth0/auth0-react'
 import { routes, type AppRoute } from '../../app/routes'
 import type { PartnerTypeCode } from '../../types/partner'
+import { isPartnerTypeCode, partnerTypes } from '../../config/partnerTypes'
 import {
   createApiClient,
   normalizeApiError,
@@ -72,16 +73,6 @@ const navigation = routes.filter((route) => route.path !== '/login')
 const PartnerConfigContext = createContext<PartnerConfigContextValue | undefined>(
   undefined,
 )
-
-function isPartnerTypeCode(value: unknown): value is PartnerTypeCode {
-  return (
-    value === 'restaurant' ||
-    value === 'meat' ||
-    value === 'bakery' ||
-    value === 'fruits_vegetables' ||
-    value === 'local_store'
-  )
-}
 
 function validateConfigResponse(response: ConfigResponse): PartnerConfig {
   const data = response?.data
@@ -208,9 +199,10 @@ export function usePartnerOrderStatusLabel() {
   const { config } = usePartnerConfig()
   return useCallback(
     (status: string, fallback: string) => {
-      if (status === 'ACCEPTED') return config?.profile.orderStatusLabels.accepted ?? fallback
-      if (status === 'PREPARING') return config?.profile.orderStatusLabels.preparing ?? fallback
-      if (status === 'READY_FOR_PICKUP') return config?.profile.orderStatusLabels.ready ?? fallback
+      const wording = config ? partnerTypes[config.partner.type].orderStatusWording : null
+      if (status === 'ACCEPTED') return wording?.accepted ?? fallback
+      if (status === 'PREPARING') return wording?.preparing ?? fallback
+      if (status === 'READY_FOR_PICKUP') return wording?.ready ?? fallback
       return fallback
     },
     [config],

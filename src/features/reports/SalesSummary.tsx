@@ -9,13 +9,13 @@ export function SalesSummary({ summary }: SalesSummaryProps) {
     {
       label: 'Total Sales',
       value: `₹${summary.totalSales.toLocaleString('en-IN')}`,
-      note: 'Demo sales for selected period',
+      note: 'Sales for selected period',
       tone: 'sales',
     },
     {
       label: 'Delivered Orders',
       value: summary.deliveredOrders.toLocaleString('en-IN'),
-      note: 'Demo report total',
+      note: 'Completed orders',
       tone: 'delivered',
     },
     {
@@ -27,7 +27,7 @@ export function SalesSummary({ summary }: SalesSummaryProps) {
     {
       label: 'Rejected Orders',
       value: summary.rejectedOrders.toLocaleString('en-IN'),
-      note: 'Demo report total',
+      note: 'Rejected orders',
       tone: 'rejected',
     },
   ]

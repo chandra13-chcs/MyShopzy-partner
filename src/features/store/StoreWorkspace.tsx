@@ -3,6 +3,7 @@ import { StoreProfile } from './StoreProfile'
 import { StoreStatus } from './StoreStatus'
 import { usePartnerConfig } from '../../services/api/PartnerConfigContext'
 import { getTodayHours } from './timeUtils'
+import { partnerTypes } from '../../config/partnerTypes'
 import type { OperatingHours, StoreProfile as StoreProfileData } from './types'
 import './store.css'
 
@@ -13,6 +14,7 @@ interface StoreWorkspaceProps {
   onToggleStore: () => void
   profile: StoreProfileData
   storeOpen: boolean
+  demoMode?: boolean
 }
 
 export default function StoreWorkspace({
@@ -22,6 +24,7 @@ export default function StoreWorkspace({
   onToggleStore,
   profile,
   storeOpen,
+  demoMode = false,
 }: StoreWorkspaceProps) {
   const { config } = usePartnerConfig()
   return (
@@ -34,7 +37,7 @@ export default function StoreWorkspace({
             Manage your store details, availability, and opening hours.
           </p>
         </div>
-        <span className="demo-tag demo-tag-large">LOCAL DEMO</span>
+        {demoMode && <span className="demo-tag demo-tag-large">LOCAL DEMO</span>}
       </div>
 
       <section className="store-summary" aria-label="Store summary">
@@ -47,7 +50,7 @@ export default function StoreWorkspace({
         </div>
         <div className="store-summary-item">
           <span className="store-summary-label">Business type</span>
-          <strong>{config?.profile.label}</strong>
+          <strong>{config ? partnerTypes[profile.partnerType].label : ''}</strong>
         </div>
         <div className="store-summary-item">
           <span className="store-summary-label">Today’s hours</span>

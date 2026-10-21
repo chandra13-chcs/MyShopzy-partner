@@ -1,5 +1,10 @@
-import { periodLabels } from './reportDemoData'
 import type { ReportPeriod } from './types'
+
+const periodLabels: Record<ReportPeriod, string> = {
+  today: 'Today',
+  week: 'This Week',
+  month: 'This Month',
+}
 
 interface ReportFiltersProps {
   onChange: (period: ReportPeriod) => void

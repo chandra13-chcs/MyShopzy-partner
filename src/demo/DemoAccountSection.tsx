@@ -20,7 +20,7 @@ export function DemoAccountSection({
       <dl className="settings-account-details">
         <div><dt>Business</dt><dd>{businessName}</dd></div>
         <div><dt>Role</dt><dd>Partner</dd></div>
-        <div><dt>Email</dt><dd>partner@demo.myshopzy.in</dd></div>
+        <div><dt>Email</dt><dd>Not provided</dd></div>
         <div>
           <dt>Status</dt>
           <dd><span className="account-active-dot" />Active</dd>

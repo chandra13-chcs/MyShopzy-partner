@@ -1,9 +1,13 @@
 import { useState, type FormEvent } from 'react'
+import type { PartnerTypeConfig } from '../../config/partnerTypes'
 import { Dialog } from './Dialog'
-import type { Product, ProductCategory, ProductDraft } from './types'
+import type { Product, ProductCategory, ProductDraft, ProductVariant } from './types'
+
+type VariantInput = { label: string; unit: string; quantity: string; price: string; stock: string }
 
 interface ProductFormProps {
   allowedUnits: string[]
+  extraFields: PartnerTypeConfig['extraProductFields']
   categories: ProductCategory[]
   product?: Product
   onCancel: () => void
@@ -12,6 +16,7 @@ interface ProductFormProps {
 
 export function ProductForm({
   allowedUnits,
+  extraFields,
   categories,
   product,
   onCancel,
@@ -36,6 +41,20 @@ export function ProductForm({
   const [restockThreshold, setRestockThreshold] = useState(
     String(product?.restockThreshold ?? 5),
   )
+  const [extraValues, setExtraValues] = useState<Record<string, string | number | boolean>>(
+    product?.extraFields ?? {},
+  )
+  const [variants, setVariants] = useState<VariantInput[]>(() =>
+    product?.variants?.length
+      ? product.variants.map((variant) => ({
+          label: variant.label,
+          unit: variant.unit,
+          quantity: String(variant.quantity),
+          price: String(variant.price),
+          stock: String(variant.stock),
+        }))
+      : [{ label: 'Regular', unit: suggestedUnits[0] ?? '', quantity: '1', price: '0', stock: '0' }],
+  )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const title = product ? 'Edit product' : 'Add product'
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -47,6 +66,7 @@ export function ProductForm({
     const nextErrors: Record<string, string> = {}
 
     if (!name.trim()) nextErrors.name = 'Enter a product name.'
+    if (name.trim().length > 80) nextErrors.name = 'Product name must be 80 characters or fewer.'
     if (!categoryId) nextErrors.categoryId = 'Choose a category.'
     if (price.trim() === '' || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
       nextErrors.price = 'Enter a valid non-negative price.'
@@ -65,6 +85,27 @@ export function ProductForm({
     ) {
       nextErrors.restockThreshold = 'Enter a whole number of 1 or more.'
     }
+    const variantLabels = variants.map((variant) => variant.label.trim().toLocaleLowerCase())
+    if (variants.length < 1 || variants.length > 8) {
+      nextErrors.variants = 'Add between 1 and 8 variants.'
+    } else if (variants.some((variant) => !variant.label.trim() || variant.label.trim().length > 20)) {
+      nextErrors.variants = 'Each variant needs a label of 1 to 20 characters.'
+    } else if (new Set(variantLabels).size !== variantLabels.length) {
+      nextErrors.variants = 'Variant labels must be unique.'
+    } else if (variants.some((variant) =>
+      !suggestedUnits.includes(variant.unit) ||
+      !Number.isFinite(Number(variant.quantity)) || Number(variant.quantity) <= 0 ||
+      !Number.isFinite(Number(variant.price)) || Number(variant.price) < 0 ||
+      !Number.isInteger(Number(variant.stock)) || Number(variant.stock) < 0,
+    )) {
+      nextErrors.variants = 'Enter a valid unit, quantity, price, and stock for each variant.'
+    }
+    for (const field of extraFields) {
+      const value = extraValues[field.key]
+      if (field.required && (value === undefined || value === '')) {
+        nextErrors[`extra-${field.key}`] = `Enter ${field.label.toLowerCase()}.`
+      }
+    }
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
@@ -77,6 +118,14 @@ export function ProductForm({
       available: available && parsedStockQuantity > 0,
       stockQuantity: parsedStockQuantity,
       restockThreshold: parsedRestockThreshold,
+      extraFields: extraValues,
+      variants: variants.map((variant): ProductVariant => ({
+        label: variant.label.trim(),
+        unit: variant.unit,
+        quantity: Number(variant.quantity),
+        price: Number(variant.price),
+        stock: Number(variant.stock),
+      })),
     })
   }
 
@@ -104,6 +153,7 @@ export function ProductForm({
             aria-invalid={Boolean(errors.name)}
             autoFocus
             onChange={(event) => setName(event.target.value)}
+            maxLength={80}
             placeholder="Enter product name"
             value={name}
           />
@@ -183,6 +233,89 @@ export function ProductForm({
             value={description}
           />
         </label>
+
+        {extraFields.map((field) => (
+          <label className="products-field" key={field.key}>
+            <span>{field.label}{field.required && <> <span className="required-mark">*</span></>}</span>
+            {field.type === 'boolean' ? (
+              <input
+                checked={Boolean(extraValues[field.key])}
+                onChange={(event) => setExtraValues((current) => ({ ...current, [field.key]: event.target.checked }))}
+                type="checkbox"
+              />
+            ) : field.type === 'select' ? (
+              <select
+                onChange={(event) => setExtraValues((current) => ({ ...current, [field.key]: event.target.value }))}
+                value={String(extraValues[field.key] ?? '')}
+              >
+                <option value="">Select {field.label.toLowerCase()}</option>
+                {(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            ) : (
+              <input
+                onChange={(event) => setExtraValues((current) => ({
+                  ...current,
+                  [field.key]: field.type === 'number' && event.target.value !== ''
+                    ? Number(event.target.value)
+                    : event.target.value,
+                }))}
+                type={field.type}
+                value={String(extraValues[field.key] ?? '')}
+              />
+            )}
+            {errors[`extra-${field.key}`] && (
+              <span className="products-field-error">{errors[`extra-${field.key}`]}</span>
+            )}
+          </label>
+        ))}
+
+        <section className="products-variants" aria-labelledby="product-variants-heading">
+          <div className="products-variants-heading">
+            <h3 id="product-variants-heading">Variants</h3>
+            <button
+              className="products-button products-button-secondary"
+              disabled={variants.length >= 8}
+              onClick={() => setVariants((current) => [...current, {
+                label: '', unit: suggestedUnits[0] ?? '', quantity: '1', price: '0', stock: '0',
+              }])}
+              type="button"
+            >
+              Add variant
+            </button>
+          </div>
+          {variants.map((variant, index) => (
+            <div className="products-variant-row" key={index}>
+              <label className="products-field">
+                <span>Label</span>
+                <input maxLength={20} onChange={(event) => setVariants((current) => current.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} value={variant.label} />
+              </label>
+              <label className="products-field">
+                <span>Unit</span>
+                <select onChange={(event) => setVariants((current) => current.map((item, i) => i === index ? { ...item, unit: event.target.value } : item))} value={variant.unit}>
+                  {suggestedUnits.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                </select>
+              </label>
+              <label className="products-field">
+                <span>Quantity</span>
+                <input min="0.01" onChange={(event) => setVariants((current) => current.map((item, i) => i === index ? { ...item, quantity: event.target.value } : item))} step="any" type="number" value={variant.quantity} />
+              </label>
+              <label className="products-field">
+                <span>Price (₹)</span>
+                <input min="0" onChange={(event) => setVariants((current) => current.map((item, i) => i === index ? { ...item, price: event.target.value } : item))} step="any" type="number" value={variant.price} />
+              </label>
+              <label className="products-field">
+                <span>Stock</span>
+                <input min="0" onChange={(event) => setVariants((current) => current.map((item, i) => i === index ? { ...item, stock: event.target.value } : item))} step="1" type="number" value={variant.stock} />
+              </label>
+              {variants.length > 1 && (
+                <button className="text-action is-danger" onClick={() => setVariants((current) => current.filter((_, i) => i !== index))} type="button">
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          {errors.variants && <p className="products-field-error" role="alert">{errors.variants}</p>}
+        </section>
 
         <div className="products-form-row">
           <label className="products-field">

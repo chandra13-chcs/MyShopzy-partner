@@ -25,7 +25,7 @@ export const notificationOptions: {
   {
     key: 'orderVibration',
     label: 'Order vibration',
-    description: 'Demo preference for device vibration on an order alert.',
+    description: 'Vibrate on a new order alert when supported by the device.',
   },
   {
     key: 'pendingOrderReminder',

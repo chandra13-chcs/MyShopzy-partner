@@ -18,7 +18,7 @@ export function SalesTrend({ points, title }: SalesTrendProps) {
       <div className="report-panel-heading">
         <div>
           <h2 id="sales-trend-heading">Sales trend</h2>
-          <p>{title} · demo values</p>
+          <p>{title} · completed orders</p>
         </div>
         <span className="sales-trend-legend"><span /> Sales</span>
       </div>

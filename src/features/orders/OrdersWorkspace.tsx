@@ -7,6 +7,7 @@ import { useNewOrderAlerts } from './NewOrderAlertsContext'
 import type { DemoOrder, OrderStatus, RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import type { TranslationKey } from '../../i18n/translations'
+import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 import './orders.css'
 
 type OrderFilter = 'ALL' | OrderStatus
@@ -38,6 +39,8 @@ interface OrdersWorkspaceProps {
   onSelectOrder: (orderId: string | undefined) => void
   orders: DemoOrder[]
   selectedOrderId?: string
+  demoMode?: boolean
+  canSimulateOrder?: boolean
 }
 
 export default function OrdersWorkspace({
@@ -47,8 +50,11 @@ export default function OrdersWorkspace({
   onSelectOrder,
   orders,
   selectedOrderId,
+  demoMode = false,
+  canSimulateOrder = false,
 }: OrdersWorkspaceProps) {
   const { t } = useLanguage()
+  const partnerStatusLabel = usePartnerOrderStatusLabel()
   const { alertsEnabled, setAlertsEnabled } = useNewOrderAlerts()
   const [filter, setFilter] = useState<OrderFilter>('ALL')
   const [search, setSearch] = useState('')
@@ -109,7 +115,7 @@ export default function OrdersWorkspace({
           <p className="page-description">{t('orders.description')}</p>
         </div>
         <div className="orders-page-actions">
-          <span className="demo-tag demo-tag-large">{t('orders.localDemo')}</span>
+          {demoMode && <span className="demo-tag demo-tag-large">{t('orders.localDemo')}</span>}
           <button
             aria-pressed={alertsEnabled}
             className={`orders-alert-toggle${alertsEnabled ? ' is-enabled' : ''}`}
@@ -121,8 +127,11 @@ export default function OrdersWorkspace({
               ? t('orders.alertsOn')
               : t('orders.alertsOff')}
           </button>
-          <button
+          {demoMode && <button
+            aria-label={canSimulateOrder ? t('orders.simulateOrder') : 'Add a product before simulating an order'}
             className="orders-simulate-button"
+            disabled={!canSimulateOrder}
+            title={canSimulateOrder ? undefined : 'Add a product before simulating an order.'}
             onClick={() => {
               setSearch('')
               setFilter('PENDING')
@@ -132,7 +141,7 @@ export default function OrdersWorkspace({
           >
             <span aria-hidden="true">＋</span>
             {t('orders.simulateOrder')}
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -182,7 +191,7 @@ export default function OrdersWorkspace({
               value={search}
             />
           </label>
-          <span className="orders-demo-note">{t('orders.localDemo')}</span>
+          {demoMode && <span className="orders-demo-note">{t('orders.localDemo')}</span>}
         </div>
 
         <div
@@ -204,7 +213,9 @@ export default function OrdersWorkspace({
                 role="tab"
                 type="button"
               >
-                {t(item.label)} <span>{count}</span>
+                {item.value === 'PREPARING'
+                  ? partnerStatusLabel('PREPARING', t(item.label))
+                  : t(item.label)} <span>{count}</span>
               </button>
             )
           })}

@@ -13,6 +13,16 @@ export interface Product {
   available: boolean
   stockQuantity: number
   restockThreshold: number
+  extraFields?: Record<string, string | number | boolean>
+  variants?: ProductVariant[]
+}
+
+export interface ProductVariant {
+  label: string
+  unit: string
+  quantity: number
+  price: number
+  stock: number
 }
 
 export type ProductDraft = Omit<Product, 'id'>

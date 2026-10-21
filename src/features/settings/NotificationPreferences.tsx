@@ -1,4 +1,4 @@
-import { notificationOptions } from './settingsDemoData'
+import { notificationOptions } from '../../config/notificationPreferences'
 import type { NotificationPreferences as Preferences } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { useNewOrderAlerts } from '../orders/NewOrderAlertsContext'

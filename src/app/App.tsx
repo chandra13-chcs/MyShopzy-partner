@@ -3,7 +3,6 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { AppShell } from '../components/layout/AppShell'
 import OrdersWorkspace from '../features/orders/OrdersWorkspace'
 import { NewOrderAlertsProvider } from '../features/orders/NewOrderAlerts'
-import { initialOrders } from '../features/orders/orderDemoData'
 import {
   normalizeDemoOrders,
   transitionDemoOrder,
@@ -11,19 +10,11 @@ import {
 } from '../features/orders/orderState'
 import type { DemoOrder, OrderStatus, RiderStatus } from '../features/orders/types'
 import ProductsWorkspace from '../features/products/ProductsWorkspace'
-import {
-  initialCategories,
-  initialProducts,
-} from '../features/products/demoData'
 import type { Product, ProductCategory } from '../features/products/types'
 import ReportsWorkspace from '../features/reports/ReportsWorkspace'
 import SettingsWorkspace from '../features/settings/SettingsWorkspace'
 import StoreWorkspace from '../features/store/StoreWorkspace'
-import {
-  initialOperatingHours,
-  initialStoreProfile,
-} from '../features/store/storeDemoData'
-import type { StoreProfile } from '../features/store/types'
+import type { OperatingHours, StoreProfile } from '../features/store/types'
 import DashboardPage from '../pages/DashboardPage'
 import LoginPage from '../pages/LoginPage'
 import MorePage from '../pages/MorePage'
@@ -36,6 +27,8 @@ import {
   type PartnerConfig,
 } from '../services/api/PartnerConfigContext'
 import { resolveRoute, routes, type AppRoute } from './routes'
+import { partnerTypes } from '../config/partnerTypes'
+import { partnerData, type PartnerAccount } from '../services/api/partnerData'
 
 function LoadingPage({ title, description }: { title: string; description: string }) {
   return (
@@ -49,52 +42,50 @@ function LoadingPage({ title, description }: { title: string; description: strin
   )
 }
 
-function makeDemoCatalog() {
-  const categories = initialCategories.map((category) => ({ ...category }))
-  return {
-    categories,
-    products: initialProducts.map((product, index) => ({
-      ...product,
-      categoryId: categories[index % categories.length]?.id ?? '',
-    })),
-  }
+const emptyStoreProfile: StoreProfile = {
+  businessName: '',
+  partnerType: 'restaurant',
+  phone: '',
+  address: '',
+  description: '',
 }
+const emptyOperatingHours: OperatingHours = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+].map((day) => ({ day, enabled: false, openingTime: '09:00', closingTime: '22:00' }))
 
-const localPreviewConfig: PartnerConfig = {
-  profile: {
-    label: 'Restaurant',
-    allowedUnits: ['piece', 'kg', 'g', 'litre', 'ml'],
-    extraProductFields: [],
-    defaultCategories: initialCategories.map(({ name }) => ({
-      name,
-      slug: name.toLowerCase().replace(/\s+/g, '-'),
-    })),
-    orderStatusLabels: {
-      accepted: 'Accepted',
-      preparing: 'Preparing',
-      ready: 'Ready for pickup',
+function createPreviewConfig(account: PartnerAccount): PartnerConfig {
+  const type = partnerTypes[account.type]
+  return {
+    profile: {
+      label: type.label,
+      allowedUnits: type.units,
+      extraProductFields: type.extraProductFields,
+      defaultCategories: type.defaultCategories,
+      orderStatusLabels: {
+        accepted: type.orderStatusWording.accepted,
+        preparing: type.orderStatusWording.preparing,
+        ready: type.orderStatusWording.ready,
+      },
     },
-  },
-  partner: {
-    id: 'local-preview-partner',
-    name: initialStoreProfile.businessName,
-    type: 'restaurant',
-    status: 'active',
-    contactEmail: null,
-    contactPhone: initialStoreProfile.phone,
-    timezone: 'Asia/Kolkata',
-  },
-  shops: [
-    {
-      id: 'local-preview-shop',
-      name: initialStoreProfile.businessName,
-      slug: 'demo-business',
+    partner: {
+      id: account.partnerId,
+      name: account.businessName,
+      type: account.type,
       status: 'active',
-      address: initialStoreProfile.address,
-      operatingDetails: initialOperatingHours,
+      contactEmail: null,
+      contactPhone: null,
+      timezone: null,
     },
-  ],
-  navigation: routes.filter((item) => item.path !== '/login'),
+    shops: [{
+      id: account.partnerId,
+      name: account.shopName,
+      slug: account.shopName.toLowerCase().replace(/\s+/g, '-'),
+      status: 'active',
+      address: null,
+      operatingDetails: null,
+    }],
+    navigation: routes.filter((item) => item.path !== '/login'),
+  }
 }
 
 function PartnerPortal({
@@ -102,37 +93,50 @@ function PartnerPortal({
   navigate,
   onLogout,
   logoutError,
+  demoAccount,
+  demoMode = false,
+  simulateOrder,
 }: {
   route: AppRoute
   navigate: (path: string) => void
   onLogout?: () => void
   logoutError: string
+  demoAccount?: PartnerAccount
+  demoMode?: boolean
+  simulateOrder?: (product: Product) => DemoOrder
 }) {
   const { t } = useLanguage()
   const { config, loading, error, reload } = usePartnerConfig()
   const [storeOpen, setStoreOpen] = useState(
-    () => config?.shops[0]?.status === 'active',
+    () => demoMode || config?.shops[0]?.status === 'active',
   )
   const [storeProfile, setStoreProfile] = useState<StoreProfile | null>(() =>
-    config
+    config || demoAccount
       ? {
-          ...initialStoreProfile,
-          businessName: config.partner.name,
-          partnerType: config.partner.type,
-          phone: config.partner.contactPhone ?? initialStoreProfile.phone,
-          address: config.shops[0]?.address ?? initialStoreProfile.address,
+          ...emptyStoreProfile,
+          businessName: demoAccount?.businessName ?? config?.partner.name ?? '',
+          partnerType: demoAccount?.type ?? config?.partner.type ?? 'restaurant',
+          phone: config?.partner.contactPhone ?? '',
+          address: config?.shops[0]?.address ?? '',
         }
       : null,
   )
-  const [operatingHours, setOperatingHours] = useState(initialOperatingHours)
-  const [orders, setOrders] = useState(() => normalizeDemoOrders(initialOrders))
-  const [catalog, setCatalog] = useState(() =>
-    config ? makeDemoCatalog() : null,
-  )
+  const [operatingHours, setOperatingHours] = useState(emptyOperatingHours)
+  const [orders, setOrders] = useState(() => normalizeDemoOrders(demoAccount?.orders ?? []))
+  const [catalog, setCatalog] = useState(() => demoAccount
+    ? { categories: demoAccount.categories, products: demoAccount.products }
+    : null)
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
   const [initialized, setInitialized] = useState(false)
+  const [dataError, setDataError] = useState('')
 
   const safeOrders = normalizeDemoOrders(orders)
+
+  function persistDemoRequest(request: Promise<unknown>) {
+    void request.catch((error: unknown) => {
+      setDataError(error instanceof Error ? error.message : String(error))
+    })
+  }
 
   useEffect(() => {
     if (route.path !== '/orders') setSelectedOrderId(undefined)
@@ -142,16 +146,16 @@ function PartnerPortal({
     if (!config || initialized) return
     const firstShop = config.shops[0]
     setStoreProfile({
-      ...initialStoreProfile,
+      ...emptyStoreProfile,
       businessName: config.partner.name,
       partnerType: config.partner.type,
-      phone: config.partner.contactPhone ?? initialStoreProfile.phone,
-      address: firstShop?.address ?? initialStoreProfile.address,
+      phone: config.partner.contactPhone ?? '',
+      address: firstShop?.address ?? '',
     })
     setStoreOpen(firstShop?.status === 'active')
-    setCatalog(makeDemoCatalog())
+    if (!catalog) setCatalog({ categories: [], products: [] })
     setInitialized(true)
-  }, [config, initialized])
+  }, [catalog, config, initialized])
 
   function handleNavigate(path: string) {
     setSelectedOrderId(undefined)
@@ -175,6 +179,7 @@ function PartnerPortal({
           : order,
       ),
     )
+    if (demoMode) persistDemoRequest(partnerData.setOrderStatus(orderId, status))
   }
 
   function updateOrderDeliveryStatus(orderId: string, status: RiderStatus) {
@@ -189,33 +194,15 @@ function PartnerPortal({
           : order,
       ),
     )
+    if (demoMode) persistDemoRequest(partnerData.setOrderStatus(orderId, status))
   }
 
   function simulateNewOrder() {
-    const now = new Date()
-    const timestamp = now.toLocaleTimeString('en-IN', {
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-    const order: DemoOrder = {
-      id: `MS-TEST-${now.getTime()}`,
-      customerName: 'Test Customer',
-      customerPhone: '+91 ••••• 9000',
-      items: [{ productName: 'Chicken Biryani', quantity: 1, unitPrice: 220 }],
-      subtotal: 220,
-      deliveryFee: 20,
-      total: 240,
-      status: 'PENDING',
-      address: '1-1, Demo Test Street',
-      area: 'Demo Area',
-      city: 'Mandapeta',
-      deliveryInstructions: 'Test order created in the local demo.',
-      orderedAt: `Today, ${timestamp}`,
-      paymentMethod: 'UPI',
-      paymentStatus: 'PAID',
-      statusHistory: [{ status: 'PENDING', timestamp }],
-    }
+    const product = catalog?.products[0]
+    if (!demoMode || !simulateOrder || !product) return
+    const order = simulateOrder(product)
     setOrders((current) => [order, ...normalizeDemoOrders(current)])
+    persistDemoRequest(partnerData.addOrder(order))
   }
 
   if (loading) {
@@ -282,6 +269,8 @@ function PartnerPortal({
       <OrdersWorkspace
         orders={safeOrders}
         onSimulateOrder={simulateNewOrder}
+        demoMode={demoMode}
+        canSimulateOrder={catalog.products.length > 0}
         onDeliveryStatusChange={updateOrderDeliveryStatus}
         onStatusChange={updateOrderStatus}
         onSelectOrder={setSelectedOrderId}
@@ -291,20 +280,44 @@ function PartnerPortal({
   } else if (route.path === '/products') {
     page = (
       <ProductsWorkspace
-        partnerTypeLabel={config.profile.label}
-        categorySuggestions={config.profile.defaultCategories.map(({ name }) => name)}
-        allowedUnits={config.profile.allowedUnits}
+        partnerTypeLabel={partnerTypes[config.partner.type].label}
+        productsLabel={partnerTypes[config.partner.type].productsLabel}
+        demoMode={demoMode}
+        categorySuggestions={partnerTypes[config.partner.type].defaultCategories.map(({ name }) => name)}
+        allowedUnits={partnerTypes[config.partner.type].units}
+        extraProductFields={partnerTypes[config.partner.type].extraProductFields}
         categories={catalog.categories}
         onCategoriesChange={(update: (current: ProductCategory[]) => ProductCategory[]) =>
-          setCatalog((current) => current
-            ? { ...current, categories: update(current.categories) }
-            : current)
-        }
+          setCatalog((current) => {
+            if (!current) return current
+            const categories = update(current.categories)
+            if (demoMode) persistDemoRequest(partnerData.saveCategories(categories))
+            return { ...current, categories }
+          })}
         onProductsChange={(update: (current: Product[]) => Product[]) =>
-          setCatalog((current) => current
-            ? { ...current, products: update(current.products) }
-            : current)
-        }
+          setCatalog((current) => {
+            if (!current) return current
+            const products = update(current.products)
+            if (demoMode) {
+              for (const product of products) {
+                const prior = current.products.find((item) => item.id === product.id)
+                if (!prior || JSON.stringify(prior) !== JSON.stringify(product)) {
+                  if (prior && prior.available !== product.available) {
+                    persistDemoRequest(partnerData.saveProduct(product, product.id).then(() =>
+                      partnerData.setProductAvailability(product.id, product.available)))
+                  } else {
+                    persistDemoRequest(partnerData.saveProduct(product, product.id))
+                  }
+                }
+              }
+              for (const removed of current.products.filter((item) =>
+                !products.some((next) => next.id === item.id),
+              )) {
+                persistDemoRequest(partnerData.deleteProduct(removed.id))
+              }
+            }
+            return { ...current, products }
+          })}
         products={catalog.products}
       />
     )
@@ -317,6 +330,7 @@ function PartnerPortal({
         onToggleStore={() => setStoreOpen((isOpen) => !isOpen)}
         profile={storeProfile}
         storeOpen={storeOpen}
+        demoMode={demoMode}
       />
     )
   } else if (route.path === '/reports') {
@@ -325,6 +339,8 @@ function PartnerPortal({
         onNavigate={handleNavigate}
         orders={safeOrders}
         products={catalog.products}
+        categories={catalog.categories}
+        demoMode={demoMode}
       />
     )
   } else if (route.path === '/settings') {
@@ -334,6 +350,7 @@ function PartnerPortal({
         operatingHours={operatingHours}
         profile={storeProfile}
         storeOpen={storeOpen}
+        demoMode={demoMode}
       />
     )
   } else if (route.path === '/more') {
@@ -360,12 +377,15 @@ function PartnerPortal({
         onLogout={onLogout}
         onOpenOrder={openOrder}
         storeOpen={storeOpen}
+        demoMode={demoMode}
+        navigationLabel={partnerTypes[config.partner.type].navigationLabel}
       >
         {logoutError && (
           <p className="store-form-error" role="alert">
             {logoutError}
           </p>
         )}
+        {dataError && <p className="store-form-error" role="alert">{dataError}</p>}
         {page}
       </AppShell>
     </NewOrderAlertsProvider>
@@ -441,7 +461,15 @@ function AuthenticatedApp() {
   )
 }
 
-function PreviewPortal() {
+export function PreviewPortal({
+  account,
+  demoMode = false,
+  simulateOrder,
+}: {
+  account: PartnerAccount
+  demoMode?: boolean
+  simulateOrder?: (product: Product) => DemoOrder
+}) {
   const [route, setRoute] = useState<AppRoute>(() => {
     const currentRoute = resolveRoute(window.location.pathname)
     return currentRoute.path === '/login' ? resolveRoute('/') : currentRoute
@@ -463,11 +491,14 @@ function PreviewPortal() {
   }
 
   return (
-    <PartnerConfigPreviewProvider config={localPreviewConfig}>
+    <PartnerConfigPreviewProvider config={createPreviewConfig(account)}>
       <PartnerPortal
         route={route}
         navigate={navigate}
         logoutError=""
+        demoAccount={account}
+        demoMode={demoMode}
+        simulateOrder={simulateOrder}
       />
     </PartnerConfigPreviewProvider>
   )
@@ -477,14 +508,6 @@ function App() {
   return (
     <LanguageProvider>
       <AuthenticatedApp />
-    </LanguageProvider>
-  )
-}
-
-export function LocalPreviewApp() {
-  return (
-    <LanguageProvider>
-      <PreviewPortal />
     </LanguageProvider>
   )
 }

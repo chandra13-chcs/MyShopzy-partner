@@ -1,6 +1,7 @@
 import { getTodayHours } from '../store/timeUtils'
 import type { OperatingHours, StoreProfile } from '../store/types'
 import { usePartnerConfig } from '../../services/api/PartnerConfigContext'
+import { partnerTypes } from '../../config/partnerTypes'
 
 interface BusinessPreferencesProps {
   onToggleStore: () => void
@@ -32,7 +33,7 @@ export function BusinessPreferences({
         </div>
         <div>
           <dt>Business type</dt>
-          <dd>{config?.profile.label}</dd>
+          <dd>{config ? partnerTypes[profile.partnerType].label : ''}</dd>
         </div>
         <div>
           <dt>Operating hours today</dt>

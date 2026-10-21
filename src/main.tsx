@@ -2,19 +2,40 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
 import './index.css'
-import App, { LocalPreviewApp } from './app/App.tsx'
+import App from './app/App.tsx'
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE
 const root = createRoot(document.getElementById('root')!)
 
-if (import.meta.env.DEV) {
-  root.render(
-    <StrictMode>
-      <LocalPreviewApp />
-    </StrictMode>,
-  )
+if (import.meta.env.VITE_DEMO_MODE === 'true') {
+  void import('./demo/DemoModeApp').then(({ default: DemoModeApp }) => {
+    root.render(
+      <StrictMode>
+        <DemoModeApp />
+      </StrictMode>,
+    )
+  }).catch((error: unknown) => {
+    root.render(
+      <StrictMode>
+        <main className="main-content">
+          <section className="placeholder-page" role="alert">
+            <h1>Demo mode failed to load</h1>
+            <p className="page-description">{error instanceof Error ? error.message : String(error)}</p>
+          </section>
+        </main>
+      </StrictMode>,
+    )
+  })
+} else if (import.meta.env.DEV) {
+  void import('./demo/LocalPreviewApp').then(({ default: LocalPreviewApp }) => {
+    root.render(
+      <StrictMode>
+        <LocalPreviewApp />
+      </StrictMode>,
+    )
+  })
 } else if (!domain || !clientId || !audience) {
   root.render(
     <StrictMode>

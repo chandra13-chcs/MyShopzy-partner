@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { PartnerTypeConfig } from '../../config/partnerTypes'
 import { CategoryForm } from './CategoryForm'
 import { CategoryList } from './CategoryList'
 import { Dialog } from './Dialog'
@@ -17,8 +18,11 @@ type ProductFilter = 'all' | 'available' | 'out-of-stock'
 
 interface ProductsWorkspaceProps {
   partnerTypeLabel: string
+  productsLabel: string
   categorySuggestions: string[]
   allowedUnits: string[]
+  extraProductFields: PartnerTypeConfig['extraProductFields']
+  demoMode?: boolean
   categories: ProductCategory[]
   products: Product[]
   onCategoriesChange: (update: (current: ProductCategory[]) => ProductCategory[]) => void
@@ -31,8 +35,11 @@ function isProductFilter(value: string): value is ProductFilter {
 
 export default function ProductsWorkspace({
   partnerTypeLabel,
+  productsLabel,
   categorySuggestions,
   allowedUnits,
+  extraProductFields,
+  demoMode = false,
   categories,
   products,
   onCategoriesChange,
@@ -70,7 +77,7 @@ export default function ProductsWorkspace({
     } else {
       onProductsChange((current) => [
         ...current,
-        { ...draft, id: `product-${Date.now()}` },
+        { ...draft, id: `product-${crypto.randomUUID()}` },
       ])
     }
     closeProductForm()
@@ -163,13 +170,13 @@ export default function ProductsWorkspace({
       <div className="products-page-heading">
         <div>
           <p className="page-eyebrow">Catalog</p>
-          <h1>Products</h1>
+          <h1>{productsLabel}</h1>
           <p className="page-description">
             Manage products and categories for {partnerTypeLabel}. Suggestions and
             product options follow this business type.
           </p>
         </div>
-        <span className="demo-tag demo-tag-large">LOCAL DEMO DATA</span>
+        {demoMode && <span className="demo-tag demo-tag-large">LOCAL DEMO DATA</span>}
       </div>
 
       <div className="products-workspace-toolbar">
@@ -181,7 +188,7 @@ export default function ProductsWorkspace({
             role="tab"
             type="button"
           >
-            Products <span>{products.length}</span>
+            {productsLabel} <span>{products.length}</span>
           </button>
           <button
             aria-selected={tab === 'categories'}
@@ -216,8 +223,8 @@ export default function ProductsWorkspace({
         <section aria-label="Product list" className="products-section">
           <div className="products-list-header">
             <div>
-              <h2>All products</h2>
-              <p>Product information is stored locally for this demo.</p>
+              <h2>All {productsLabel.toLowerCase()}</h2>
+              <p>Manage the items available to your customers.</p>
             </div>
             <label className="product-filter">
               <span className="sr-only">Filter products by availability</span>
@@ -246,6 +253,7 @@ export default function ProductsWorkspace({
             }
             onDelete={setProductToDelete}
             onEdit={editProduct}
+            isEmptyCatalog={products.length === 0}
             products={filteredProducts}
           />
         </section>
@@ -299,6 +307,7 @@ export default function ProductsWorkspace({
       {showProductForm && (
         <ProductForm
           allowedUnits={allowedUnits}
+          extraFields={extraProductFields}
           categories={categories}
           onCancel={closeProductForm}
           onSave={saveProduct}

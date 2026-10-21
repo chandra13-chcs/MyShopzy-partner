@@ -13,6 +13,8 @@ interface AppShellProps {
   onLogout?: () => void
   onOpenOrder: (orderId: string) => void
   storeOpen: boolean
+  demoMode?: boolean
+  navigationLabel?: string
 }
 
 const routeTranslationKeys: Record<string, TranslationKey> = {
@@ -98,6 +100,8 @@ export function AppShell({
   onLogout,
   onOpenOrder,
   storeOpen,
+  demoMode = false,
+  navigationLabel,
 }: AppShellProps) {
   const { t } = useLanguage()
   const { alerts, dismissAlert } = useNewOrderAlerts()
@@ -148,7 +152,7 @@ export function AppShell({
               onClick={(event) => handleNavigation(event, item.path)}
             >
               <NavigationIcon path={item.path} />
-              <span>{t(routeTranslationKeys[item.path])}</span>
+              <span>{item.path === '/products' ? navigationLabel ?? t(routeTranslationKeys[item.path]) : t(routeTranslationKeys[item.path])}</span>
             </a>
           ))}
           {onLogout && (
@@ -172,7 +176,7 @@ export function AppShell({
               ? t('app.storeOpenStatus')
               : t('app.storeClosedStatus')}
           </span>
-          <span className="demo-tag">DEMO</span>
+          {demoMode && <span className="demo-tag">DEMO</span>}
         </div>
       </aside>
 
@@ -272,7 +276,7 @@ export function AppShell({
             onClick={(event) => handleNavigation(event, item.path)}
           >
             <NavigationIcon path={item.path} />
-            <span>{t(routeTranslationKeys[item.path])}</span>
+            <span>{item.path === '/products' ? navigationLabel ?? t(routeTranslationKeys[item.path]) : t(routeTranslationKeys[item.path])}</span>
           </a>
         ))}
       </nav>

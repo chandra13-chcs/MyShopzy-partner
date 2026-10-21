@@ -6,6 +6,7 @@ interface ProductListProps {
   onDelete: (product: Product) => void
   onEdit: (product: Product) => void
   products: Product[]
+  isEmptyCatalog?: boolean
 }
 
 function AvailabilityBadge({ available }: { available: boolean }) {
@@ -29,6 +30,7 @@ export function ProductList({
   onDelete,
   onEdit,
   products,
+  isEmptyCatalog = false,
 }: ProductListProps) {
   function categoryName(categoryId: string) {
     return categories.find((category) => category.id === categoryId)?.name ?? 'Uncategorized'
@@ -161,8 +163,8 @@ export function ProductList({
       </div>
       {products.length === 0 && (
         <div className="products-empty-state">
-          <h3>No products found</h3>
-          <p>Try another availability filter or add a product.</p>
+          <h3>{isEmptyCatalog ? 'Add your first item' : 'No products found'}</h3>
+          <p>{isEmptyCatalog ? 'Your products will appear here once added.' : 'Try another availability filter.'}</p>
         </div>
       )}
     </>

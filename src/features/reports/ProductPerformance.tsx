@@ -3,16 +3,19 @@ import type { PerformanceRow } from './types'
 interface ProductPerformanceProps {
   categories: PerformanceRow[]
   products: PerformanceRow[]
+  demoMode?: boolean
 }
 
 function PerformanceTable({
   rows,
   title,
   description,
+  demoMode,
 }: {
   rows: PerformanceRow[]
   title: string
   description: string
+  demoMode: boolean
 }) {
   return (
     <section className="report-panel performance-panel" aria-label={title}>
@@ -21,7 +24,7 @@ function PerformanceTable({
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="performance-demo-label">DEMO</span>
+        {demoMode && <span className="performance-demo-label">DEMO</span>}
       </div>
       <div className="performance-table-wrap">
         <table className="performance-table">
@@ -85,9 +88,11 @@ function PerformanceTable({
 export function ProductPerformance({
   categories,
   products,
+  demoMode = false,
 }: ProductPerformanceProps) {
   const topProduct = products.reduce<PerformanceRow | undefined>(
-    (top, product) => (!top || product.sales > top.sales ? product : top),
+    (top, product) =>
+      product.sales > 0 && (!top || product.sales > top.sales) ? product : top,
     undefined,
   )
 
@@ -97,7 +102,7 @@ export function ProductPerformance({
         <section className="top-product-highlight" aria-label="Top performing product">
           <span className="top-product-icon" aria-hidden="true">★</span>
           <div className="top-product-name">
-            <span>Top product · demo</span>
+            <span>{demoMode ? 'Top product · demo' : 'Top product'}</span>
             <strong>{topProduct.name}</strong>
           </div>
           <div className="top-product-stat">
@@ -112,11 +117,13 @@ export function ProductPerformance({
       )}
       <PerformanceTable
         description="Best-selling items for the selected report period."
+        demoMode={demoMode}
         rows={products}
         title="Product performance"
       />
       <PerformanceTable
         description="Sales grouped by reusable product category."
+        demoMode={demoMode}
         rows={categories}
         title="Category performance"
       />

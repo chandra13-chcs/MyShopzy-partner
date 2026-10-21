@@ -158,7 +158,9 @@ export default function DashboardPage({
               ))}
           </ul>
         ) : (
-          <p className="home-empty-active">{t('home.noActiveOrders')}</p>
+          <p className="home-empty-active">
+            {orders.length === 0 ? 'No orders yet' : t('home.noActiveOrders')}
+          </p>
         )}
       </section>
     </div>
