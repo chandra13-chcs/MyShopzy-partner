@@ -23,6 +23,7 @@ export interface OrderItem {
   productName: string
   quantity?: number
   unitPrice?: number
+  commissionRate?: number
   variant?: string
   addOns?: string[]
   customizations?: string[]

@@ -48,7 +48,19 @@ function DemoModePortal({
       </main>
     )
   }
-  return <PreviewPortal account={account} demoMode simulateOrder={createSimulatedOrder} />
+  return (
+    <PreviewPortal
+      account={account}
+      demoMode
+      simulateOrder={(product) =>
+        createSimulatedOrder(
+          product,
+          account.type,
+          account.categories.find((category) => category.id === product.categoryId)?.name,
+        )
+      }
+    />
+  )
 }
 
 export default function DemoModeApp({

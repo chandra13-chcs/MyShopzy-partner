@@ -151,8 +151,12 @@ function normalizeItem(value: unknown): OrderItem | undefined {
   const item: OrderItem = { productName: value.productName }
   const quantity = amount(value.quantity)
   const unitPrice = amount(value.unitPrice)
+  const commissionRate = amount(value.commissionRate)
   if (quantity !== undefined) item.quantity = quantity
   if (unitPrice !== undefined) item.unitPrice = unitPrice
+  if (commissionRate !== undefined && commissionRate >= 0 && commissionRate <= 100) {
+    item.commissionRate = commissionRate
+  }
 
   if (typeof value.variant === 'string') item.variant = value.variant
   if (Array.isArray(value.addOns)) {

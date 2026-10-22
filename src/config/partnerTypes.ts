@@ -84,7 +84,7 @@ export const partnerTypes: Record<PartnerTypeCode, PartnerTypeConfig> = {
       { key: 'brand', label: 'Brand', type: 'text', required: false },
       { key: 'expiryDate', label: 'Expiry date', type: 'text', required: false },
     ],
-    defaultCategories: categoryDefaults(['Groceries', 'Household', 'Personal Care', 'Beverages']),
+    defaultCategories: categoryDefaults(['Groceries', 'Household', 'Personal Care', 'Beverages', 'Frozen Foods']),
     orderStatusWording: { accepted: 'Accepted', preparing: 'Packing', ready: 'Ready for pickup' },
   },
 }

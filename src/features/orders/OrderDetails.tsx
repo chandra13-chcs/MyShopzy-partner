@@ -229,6 +229,11 @@ export function OrderDetails({
                             amount: item.unitPrice.toLocaleString('en-IN'),
                           })}
                       </span>
+                      {item.commissionRate !== undefined && (
+                        <small>
+                          {t('orders.commissionRate', { rate: item.commissionRate })}
+                        </small>
+                      )}
                       {item.variant && (
                         <small>{t('orders.variant', { value: item.variant })}</small>
                       )}
