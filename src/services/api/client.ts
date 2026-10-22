@@ -18,7 +18,10 @@ export class ApiError extends Error implements ApiErrorShape {
 
 type AccessTokenGetter = () => Promise<string>
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const apiBaseUrl = (
+  configuredApiBaseUrl || (import.meta.env.DEV ? 'http://localhost:3000/api/v1' : '')
+).replace(/\/+$/, '')
 
 export interface ApiClient {
   get<T>(path: string): Promise<T>
@@ -60,12 +63,12 @@ export function createApiClient(getAccessToken: AccessTokenGetter) {
         ...init,
         headers,
       })
-    } catch (error) {
+    } catch {
       throw new ApiError({
         status: 0,
         code: 'NETWORK_ERROR',
         message:
-          error instanceof Error ? error.message : 'The API request failed.',
+          'Could not reach the MyShopzy backend. Check that it is running, the API base URL is correct, and the backend allows this console origin.',
       })
     }
 
@@ -95,8 +98,12 @@ export function createApiClient(getAccessToken: AccessTokenGetter) {
       const message =
         'message' in details && typeof details.message === 'string'
           ? details.message
-          : `The request failed with status ${response.status}.`
-      throw new ApiError({ status: response.status, code, message })
+          : 'The request failed.'
+      throw new ApiError({
+        status: response.status,
+        code,
+        message: `The MyShopzy backend returned HTTP ${response.status}: ${message}`,
+      })
     }
 
     return payload as T
