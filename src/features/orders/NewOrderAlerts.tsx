@@ -9,7 +9,7 @@ import {
   type AlertReason,
   type PendingOrderAlert,
 } from './NewOrderAlertsContext'
-import type { DemoOrder } from './types'
+import { isNewOrderStatus, type DemoOrder } from './types'
 
 const soundPreferenceKey = 'myshopzy.orderSound.enabled'
 const alertsPreferenceKey = 'myshopzy.orderAlerts.enabled'
@@ -174,15 +174,16 @@ export function NewOrderAlertsProvider({
         knownOrderIds.current.add(order.id)
       }
       if (
-        order.status === 'PENDING' &&
-        (isNewOrder || (previousStatus !== undefined && previousStatus !== 'PENDING'))
+        isNewOrderStatus(order.status) &&
+        (isNewOrder || (previousStatus !== undefined && !isNewOrderStatus(previousStatus)))
       ) {
         pendingAlertOrderIds.current.add(order.id)
       }
 
       if (
-        previousStatus === 'PENDING' &&
-        order.status !== 'PENDING'
+        previousStatus !== undefined &&
+        isNewOrderStatus(previousStatus) &&
+        !isNewOrderStatus(order.status)
       ) {
         stopOrderSound(order.id, activeAudio.current, audioTimeouts.current)
         pendingAlertOrderIds.current.delete(order.id)
@@ -196,7 +197,7 @@ export function NewOrderAlertsProvider({
     for (const orderId of pendingAlertOrderIds.current) {
       const order = orders.find(
         (currentOrder) =>
-          currentOrder.id === orderId && currentOrder.status === 'PENDING',
+          currentOrder.id === orderId && isNewOrderStatus(currentOrder.status),
       )
       if (!order) {
         pendingAlertOrderIds.current.delete(orderId)
@@ -252,7 +253,7 @@ export function NewOrderAlertsProvider({
             !currentOrders.current.some(
               (currentOrder) =>
                 currentOrder.id === orderId &&
-                currentOrder.status === 'PENDING',
+                isNewOrderStatus(currentOrder.status),
             )
           ) {
             return
@@ -318,7 +319,7 @@ export function NewOrderAlertsProvider({
       for (const orderId of blockedAudioOrderIds.current) {
         const order = currentOrders.current.find(
           (currentOrder) =>
-            currentOrder.id === orderId && currentOrder.status === 'PENDING',
+            currentOrder.id === orderId && isNewOrderStatus(currentOrder.status),
         )
         if (!order) {
           blockedAudioOrderIds.current.delete(orderId)
@@ -400,7 +401,7 @@ export function NewOrderAlertsProvider({
 
     for (const order of currentOrders.current) {
       if (
-        order.status !== 'PENDING' ||
+        !isNewOrderStatus(order.status) ||
         !alertedOrderIds.current.has(order.id) ||
         activeAudio.current.has(order.id) ||
         !alertsEnabledRef.current
@@ -437,7 +438,7 @@ export function NewOrderAlertsProvider({
 
   const pendingOrderIds = new Set(
     orders
-      .filter((order) => order.status === 'PENDING')
+      .filter((order) => isNewOrderStatus(order.status))
       .map((order) => order.id),
   )
   const visibleAlerts = alerts.filter((alert) =>

@@ -1,3 +1,5 @@
+import { StoreStatusToggle } from './StoreStatusToggle'
+
 interface StoreStatusProps {
   onToggle: () => void
   storeOpen: boolean
@@ -36,15 +38,9 @@ export function StoreStatus({
           </p>
         </div>
       </div>
-      {!readOnly && <button
-        aria-pressed={storeOpen}
-        className={`store-management-toggle${storeOpen ? ' is-open' : ''}`}
-        disabled={readOnly}
-        onClick={onToggle}
-        type="button"
-      >
-        {storeOpen ? 'Close store' : 'Open store'}
-      </button>}
+      {!readOnly && (
+        <StoreStatusToggle isOnline={storeOpen} onToggle={onToggle} />
+      )}
       {readOnly && <small role="note">Availability updates are not supported by the partner API.</small>}
     </section>
   )

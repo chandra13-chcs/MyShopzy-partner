@@ -152,7 +152,7 @@ function PartnerPortal({
   logoutError: string
   demoAccount?: PartnerAccount
   demoMode?: boolean
-  simulateOrder?: (product: Product) => DemoOrder
+  simulateOrder?: (products: Product[]) => DemoOrder
 }) {
   const { t } = useLanguage()
   const { apiClient, config, loading, error, reload } = usePartnerConfig()
@@ -382,10 +382,9 @@ function PartnerPortal({
   }
 
   function simulateNewOrder() {
-    const product = catalog?.products[0]
-    if (!demoMode || !simulateOrder || !product) return
-    const order = simulateOrder(product)
-    setOrders((current) => [order, ...normalizeDemoOrders(current)])
+    if (!demoMode || !simulateOrder) return
+    const order = simulateOrder(catalog?.products ?? [])
+    setOrders((current) => [order, ...current])
     persistDemoRequest(partnerData.addOrder(order))
   }
 
@@ -475,7 +474,6 @@ function PartnerPortal({
         orders={safeOrders}
         onSimulateOrder={simulateNewOrder}
         demoMode={demoMode}
-        canSimulateOrder={catalog.products.length > 0}
         savingOrderId={savingOrderId}
         isRefreshing={dataRefreshing}
         onRefresh={() => void reloadPartnerData()}
@@ -807,7 +805,7 @@ export function PreviewPortal({
 }: {
   account: PartnerAccount
   demoMode?: boolean
-  simulateOrder?: (product: Product) => DemoOrder
+  simulateOrder?: (products: Product[]) => DemoOrder
 }) {
   const [route, setRoute] = useState<AppRoute>(() => {
     const currentRoute = resolveRoute(window.location.pathname)

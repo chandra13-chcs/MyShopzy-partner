@@ -751,7 +751,8 @@
   background: currentColor;
 }
 
-.status-pending {
+.status-pending,
+.status-new {
   background: #fff2d7;
   color: #8a5b0b;
 }
@@ -831,7 +832,8 @@
   color: #80520a;
 }
 
-.status-pending {
+.status-pending,
+.status-new {
   background: #fff0cc;
   color: #82520a;
 }

@@ -1,4 +1,5 @@
 export type OrderStatus =
+  | 'NEW'
   | 'PENDING'
   | 'ACCEPTED'
   | 'PREPARING'
@@ -15,6 +16,10 @@ export type RiderStatus =
   | 'DELIVERED'
 
 export type TrackedOrderStatus = OrderStatus | RiderStatus
+
+export function isNewOrderStatus(status: OrderStatus) {
+  return status === 'NEW' || status === 'PENDING'
+}
 
 export type PaymentMethod = 'UPI' | 'Cash on Delivery'
 export type PaymentStatus = 'PAID' | 'PAYMENT_DUE' | 'REFUNDED'

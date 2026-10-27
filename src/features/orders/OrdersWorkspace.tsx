@@ -4,7 +4,7 @@ import { OrderList } from './OrderList'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { normalizeDemoOrders } from './orderState'
 import { useNewOrderAlerts } from './NewOrderAlertsContext'
-import type { DemoOrder, OrderStatus, RiderStatus } from './types'
+import { isNewOrderStatus, type DemoOrder, type OrderStatus, type RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import type { TranslationKey } from '../../i18n/translations'
 import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
@@ -26,6 +26,7 @@ const rejectedHistoryStatuses: OrderStatus[] = ['REJECTED']
 
 function matchesFilter(order: DemoOrder, filter: OrderFilter) {
   if (filter === 'ALL') return true
+  if (filter === 'PENDING') return isNewOrderStatus(order.status)
   if (filter === 'PREPARING') {
     return order.status === 'ACCEPTED' || order.status === 'PREPARING'
   }
@@ -40,7 +41,6 @@ interface OrdersWorkspaceProps {
   orders: DemoOrder[]
   selectedOrderId?: string
   demoMode?: boolean
-  canSimulateOrder?: boolean
   partnerManaged?: boolean
   savingOrderId?: string
   orderDetails?: DemoOrder
@@ -60,7 +60,6 @@ export default function OrdersWorkspace({
   orders,
   selectedOrderId,
   demoMode = false,
-  canSimulateOrder = false,
   partnerManaged = false,
   savingOrderId,
   orderDetails,
@@ -77,7 +76,7 @@ export default function OrdersWorkspace({
   const [filter, setFilter] = useState<OrderFilter>('ALL')
   const [search, setSearch] = useState('')
   const safeOrders = useMemo(() => normalizeDemoOrders(orders), [orders])
-  const newOrderCount = safeOrders.filter((order) => order.status === 'PENDING').length
+  const newOrderCount = safeOrders.filter((order) => isNewOrderStatus(order.status)).length
 
   function selectFilter(nextFilter: OrderFilter) {
     if (nextFilter === 'PENDING') setSearch('')
@@ -156,10 +155,8 @@ export default function OrdersWorkspace({
               : t('orders.alertsOff')}
           </button>
           {demoMode && <button
-            aria-label={canSimulateOrder ? t('orders.simulateOrder') : 'Add a product before simulating an order'}
+            aria-label={t('orders.simulateOrder')}
             className="orders-simulate-button"
-            disabled={!canSimulateOrder}
-            title={canSimulateOrder ? undefined : 'Add a product before simulating an order.'}
             onClick={() => {
               setSearch('')
               setFilter('PENDING')

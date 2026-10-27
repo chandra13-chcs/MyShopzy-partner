@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { formatCustomerPhone, normalizeDemoOrder } from './orderState'
-import type { DemoOrder, OrderStatus, RiderStatus } from './types'
+import { isNewOrderStatus, type DemoOrder, type OrderStatus, type RiderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 import {
@@ -29,6 +29,7 @@ const deliverySteps: OrderStatus[] = [
 
 function partnerAction(status: OrderStatus, partnerManaged: boolean) {
   switch (status) {
+    case 'NEW':
     case 'PENDING':
       return { label: 'orders.accept' as const, status: 'ACCEPTED' as const }
     case 'ACCEPTED':
@@ -116,11 +117,16 @@ export function OrderDetails({
     ? (['PENDING', 'REJECTED'] as OrderStatus[])
     : deliverySteps
   const stepForStatus = (status: OrderStatus) =>
-    status === 'ACCEPTED' ? 'PREPARING' : status
+    status === 'NEW'
+      ? 'PENDING'
+      : status === 'ACCEPTED'
+        ? 'PREPARING'
+        : status
   const history = new Map<OrderStatus, string>()
   for (const event of order.statusHistory) {
     if (
       event.status === 'PENDING' ||
+      event.status === 'NEW' ||
       event.status === 'ACCEPTED' ||
       event.status === 'PREPARING' ||
       event.status === 'READY_FOR_PICKUP' ||
@@ -167,7 +173,7 @@ export function OrderDetails({
             {order.orderedAt && <span>{order.orderedAt}</span>}
           </div>
 
-          {order.status === 'PENDING' && (
+          {isNewOrderStatus(order.status) && (
             <div className="order-details-new-banner">
               <strong>{t('orders.newBadge')}</strong>
               <span>{t('orders.pendingDescription')}</span>
@@ -456,7 +462,7 @@ export function OrderDetails({
 
         {action && (
           <footer className="order-details-actions">
-            {order.status === 'PENDING' && (
+            {isNewOrderStatus(order.status) && (
               <button
                 className="order-action-button order-action-reject"
                 disabled={actionsDisabled}
@@ -468,7 +474,7 @@ export function OrderDetails({
             )}
             {action && (
               <button
-                className={`order-action-button${order.status === 'PENDING' ? ' order-action-accept' : ' order-action-progress'}`}
+                className={`order-action-button${isNewOrderStatus(order.status) ? ' order-action-accept' : ' order-action-progress'}`}
                 disabled={actionsDisabled}
                 onClick={() => {
                   if (

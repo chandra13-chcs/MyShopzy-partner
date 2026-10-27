@@ -7,6 +7,7 @@ let activeAccount: PartnerAccount
 
 function isOrderStatus(status: TrackedOrderStatus): status is DemoOrder['status'] {
   return (
+    status === 'NEW' ||
     status === 'PENDING' ||
     status === 'ACCEPTED' ||
     status === 'PREPARING' ||

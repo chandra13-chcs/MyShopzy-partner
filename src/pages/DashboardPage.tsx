@@ -1,5 +1,5 @@
 import { OrderStatusBadge } from '../features/orders/OrderStatusBadge'
-import type { DemoOrder } from '../features/orders/types'
+import { isNewOrderStatus, type DemoOrder } from '../features/orders/types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { orderStatusTranslationKeys } from '../i18n/translations'
 import { usePartnerOrderStatusLabel } from '../services/api/PartnerConfigContext'
@@ -39,7 +39,7 @@ export default function DashboardPage({
 }: DashboardPageProps) {
   const { language, t } = useLanguage()
   const partnerLabel = usePartnerOrderStatusLabel()
-  const pendingCount = orders.filter((order) => order.status === 'PENDING').length
+  const pendingCount = orders.filter((order) => isNewOrderStatus(order.status)).length
   const todaysOrders = orders.filter(isFromToday)
   const deliveredToday = todaysOrders.filter(
     (order) => order.status === 'COMPLETED',

@@ -1,4 +1,4 @@
-import type { DemoOrder } from '../orders/types'
+import { isNewOrderStatus, type DemoOrder } from '../orders/types'
 import type { OrderStatus } from '../orders/types'
 import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 
@@ -30,7 +30,9 @@ export function OrderSummary({ orders }: OrderSummaryProps) {
           const count = orders.filter((order) =>
             status === 'PREPARING'
               ? order.status === 'ACCEPTED' || order.status === 'PREPARING'
-              : order.status === status,
+              : status === 'PENDING'
+                ? isNewOrderStatus(order.status)
+                : order.status === status,
           ).length
           return (
             <div className="order-summary-row" key={status}>

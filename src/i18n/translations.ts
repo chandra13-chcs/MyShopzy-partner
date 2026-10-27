@@ -703,6 +703,7 @@ export const orderStatusTranslationKeys: Record<
   OrderStatus,
   TranslationKey
 > = {
+  NEW: 'status.PENDING',
   PENDING: 'status.PENDING',
   ACCEPTED: 'status.ACCEPTED',
   PREPARING: 'status.PREPARING',

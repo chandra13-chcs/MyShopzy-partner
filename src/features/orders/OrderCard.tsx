@@ -5,7 +5,7 @@ import {
   getOrderTimerStart,
   normalizeDemoOrder,
 } from './orderState'
-import type { DemoOrder, OrderStatus } from './types'
+import { isNewOrderStatus, type DemoOrder, type OrderStatus } from './types'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { usePartnerOrderStatusLabel } from '../../services/api/PartnerConfigContext'
 import {
@@ -135,7 +135,7 @@ export function OrderCard({
   }
 
   const next = nextAction(order.status, partnerManaged)
-  const isNew = order.status === 'PENDING'
+  const isNew = isNewOrderStatus(order.status)
   const itemCount = order.itemCount ?? (order.items.every((item) => item.quantity !== undefined)
     ? order.items.reduce((count, item) => count + (item.quantity ?? 0), 0)
     : undefined)

@@ -52,13 +52,7 @@ function DemoModePortal({
     <PreviewPortal
       account={account}
       demoMode
-      simulateOrder={(product) =>
-        createSimulatedOrder(
-          product,
-          account.type,
-          account.categories.find((category) => category.id === product.categoryId)?.name,
-        )
-      }
+      simulateOrder={(products) => createSimulatedOrder(products, account.type)}
     />
   )
 }

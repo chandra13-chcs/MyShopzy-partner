@@ -1095,6 +1095,7 @@ button:focus-visible {
   }
 
   .status-pill {
+    display: none;
     min-height: 25px;
     padding: 0 8px;
     font-size: 9px;

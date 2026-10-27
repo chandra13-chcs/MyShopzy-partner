@@ -1,0 +1,136 @@
+.store-status-toggle-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.store-status-toggle-track {
+  position: relative;
+  display: inline-flex;
+  width: 66px;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 4px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background-color 300ms ease;
+}
+
+.store-status-toggle-track.is-online {
+  background: #006633;
+}
+
+.store-status-toggle-track:focus-visible {
+  outline: 3px solid rgb(0 102 51 / 30%);
+  outline-offset: 3px;
+}
+
+.store-status-toggle-knob {
+  position: absolute;
+  left: 4px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffc900;
+  transform: translateX(0);
+  transition: transform 300ms ease;
+}
+
+.store-status-toggle-knob svg {
+  width: 16px;
+  height: 16px;
+}
+
+.store-status-toggle-track.is-online .store-status-toggle-knob {
+  transform: translateX(32px);
+}
+
+.store-status-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #1e293b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  white-space: nowrap;
+}
+
+.store-status-toggle-label.is-online {
+  color: #006633;
+}
+
+.store-status-toggle-pulse {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #00a65a;
+  box-shadow: 0 0 0 0 rgb(0 166 90 / 48%);
+  animation: store-status-toggle-pulse 1.8s ease-out infinite;
+}
+
+.store-status-toggle-sm .store-status-toggle-track {
+  width: 58px;
+  height: 30px;
+}
+
+.store-status-toggle-sm .store-status-toggle-knob {
+  width: 22px;
+  height: 22px;
+}
+
+.store-status-toggle-sm .store-status-toggle-track.is-online .store-status-toggle-knob {
+  transform: translateX(28px);
+}
+
+.store-status-toggle-sm .store-status-toggle-knob svg {
+  width: 14px;
+  height: 14px;
+}
+
+.store-status-toggle-lg .store-status-toggle-track {
+  width: 76px;
+  height: 42px;
+}
+
+.store-status-toggle-lg .store-status-toggle-knob {
+  width: 34px;
+  height: 34px;
+}
+
+.store-status-toggle-lg .store-status-toggle-track.is-online .store-status-toggle-knob {
+  transform: translateX(34px);
+}
+
+.store-status-toggle-lg .store-status-toggle-knob svg {
+  width: 19px;
+  height: 19px;
+}
+
+@keyframes store-status-toggle-pulse {
+  70% {
+    box-shadow: 0 0 0 6px rgb(0 166 90 / 0%);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(0 166 90 / 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-status-toggle-track,
+  .store-status-toggle-knob {
+    transition-duration: 0.01ms;
+  }
+
+  .store-status-toggle-pulse {
+    animation: none;
+  }
+}

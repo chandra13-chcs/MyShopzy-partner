@@ -75,6 +75,7 @@ export function getOrderTimerStart(orderId: string, orderedAt?: string) {
 }
 
 const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+  NEW: ['ACCEPTED', 'REJECTED'],
   PENDING: ['ACCEPTED', 'REJECTED'],
   ACCEPTED: ['PREPARING'],
   PREPARING: ['READY_FOR_PICKUP'],
@@ -85,6 +86,7 @@ const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
 }
 
 const statuses = new Set<OrderStatus>([
+  'NEW',
   'PENDING',
   'ACCEPTED',
   'PREPARING',
