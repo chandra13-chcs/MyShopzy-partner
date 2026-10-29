@@ -137,6 +137,14 @@ function createPreviewConfig(account: PartnerAccount): PartnerConfig {
   }
 }
 
+function resolvePreviewRoute(pathname: string, basePath?: string) {
+  const routePath = basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))
+    ? pathname.slice(basePath.length) || '/'
+    : pathname
+  const currentRoute = resolveRoute(routePath)
+  return currentRoute.path === '/login' ? resolveRoute('/') : currentRoute
+}
+
 function PartnerPortal({
   route,
   navigate,
@@ -802,29 +810,31 @@ export function PreviewPortal({
   account,
   demoMode = false,
   simulateOrder,
+  basePath,
 }: {
   account: PartnerAccount
   demoMode?: boolean
   simulateOrder?: (products: Product[]) => DemoOrder
+  basePath?: string
 }) {
   const [route, setRoute] = useState<AppRoute>(() => {
-    const currentRoute = resolveRoute(window.location.pathname)
-    return currentRoute.path === '/login' ? resolveRoute('/') : currentRoute
+    return resolvePreviewRoute(window.location.pathname, basePath)
   })
 
   useEffect(() => {
     function syncRoute() {
-      const currentRoute = resolveRoute(window.location.pathname)
-      setRoute(currentRoute.path === '/login' ? resolveRoute('/') : currentRoute)
+      setRoute(resolvePreviewRoute(window.location.pathname, basePath))
     }
     window.addEventListener('popstate', syncRoute)
     return () => window.removeEventListener('popstate', syncRoute)
-  }, [])
+  }, [basePath])
 
   function navigate(path: string) {
-    window.history.pushState({}, '', path)
-    const nextRoute = resolveRoute(path)
-    setRoute(nextRoute.path === '/login' ? resolveRoute('/') : nextRoute)
+    const destination = basePath
+      ? `${basePath}${path === '/' ? '' : path}`
+      : path
+    window.history.pushState({}, '', destination)
+    setRoute(resolvePreviewRoute(destination, basePath))
   }
 
   return (

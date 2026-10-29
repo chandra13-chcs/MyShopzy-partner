@@ -57,6 +57,17 @@ a {
   text-align: center;
 }
 
+.public-demo-banner {
+  position: relative;
+  z-index: 4;
+  padding: 10px 16px;
+  background: #eaf5ee;
+  color: #174b2d;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .demo-mode-off-banner button {
   border: 0;
   background: transparent;
@@ -73,6 +84,10 @@ a {
 }
 
 .demo-mode-off-banner + .app-shell .sidebar {
+  top: 40px;
+}
+
+.public-demo-banner + .app-shell .sidebar {
   top: 40px;
 }
 

@@ -8,9 +8,11 @@ import { createSimulatedOrder } from './simulateOrder'
 function DemoModePortal({
   initialAccount,
   bootstrapError,
+  basePath,
 }: {
   initialAccount?: PartnerAccount
   bootstrapError?: string
+  basePath?: string
 }) {
   const [account, setAccount] = useState<PartnerAccount | null>(null)
   const [error, setError] = useState(bootstrapError ?? '')
@@ -52,6 +54,7 @@ function DemoModePortal({
     <PreviewPortal
       account={account}
       demoMode
+      basePath={basePath}
       simulateOrder={(products) => createSimulatedOrder(products, account.type)}
     />
   )
@@ -60,13 +63,19 @@ function DemoModePortal({
 export default function DemoModeApp({
   account,
   bootstrapError,
+  basePath,
 }: {
   account?: PartnerAccount
   bootstrapError?: string
+  basePath?: string
 }) {
   return (
     <LanguageProvider>
-      <DemoModePortal initialAccount={account} bootstrapError={bootstrapError} />
+      <DemoModePortal
+        initialAccount={account}
+        bootstrapError={bootstrapError}
+        basePath={basePath}
+      />
     </LanguageProvider>
   )
 }

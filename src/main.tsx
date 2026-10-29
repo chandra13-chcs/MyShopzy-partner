@@ -17,6 +17,8 @@ const demoParamsFound = ['partnerId', 'type', 'name', 'shop'].some((key) =>
 )
 const hasDemoIdentifiers =
   startupUrl.searchParams.has('partnerId') || startupUrl.searchParams.has('type')
+const publicDemoPath =
+  startupUrl.pathname === '/demo' || startupUrl.pathname.startsWith('/demo/')
 const root = createRoot(document.getElementById('root')!)
 
 function DemoModeOffBanner() {
@@ -55,7 +57,20 @@ function logStartup(partnerId?: string, type?: string) {
   )
 }
 
-if (demoMode) {
+if (publicDemoPath) {
+  void import('./demo/PublicDemoApp').then(({ default: PublicDemoApp }) => {
+    renderApp(<PublicDemoApp />)
+  }).catch((error: unknown) => {
+    renderApp(
+      <main className="main-content">
+        <section className="placeholder-page" role="alert">
+          <h1>Public demo failed to load</h1>
+          <p className="page-description">{error instanceof Error ? error.message : String(error)}</p>
+        </section>
+      </main>,
+    )
+  })
+} else if (demoMode) {
   let demoAccount: PartnerAccount | undefined
   let bootstrapError: string | undefined
   try {
