@@ -1,4 +1,4 @@
-import type { NotificationPreferences } from './types'
+import type { NotificationPreferences } from '../features/settings/types'
 
 export const initialNotificationPreferences: NotificationPreferences = {
   newOrderAlerts: true,
